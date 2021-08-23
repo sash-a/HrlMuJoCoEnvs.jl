@@ -1,28 +1,17 @@
 module HrlMuJoCoEnvs
 
-using LyceumMuJoCo
+using Distributions
+using Random
+using UnsafeArrays
+import UnsafeArrays: @uviews
 
-# include("Ant-v2.jl")
+using LightXML
+using Rotations
+
+using LyceumBase, LyceumBase.Tools, LyceumMuJoCo, MuJoCo, Shapes
+
+include("WalkerBase.jl")
+include("Ant-v2.jl")
 include("AntMaze.jl")
-using LyceumMuJoCoViz
-# using MuJoCo
-mj_activate("/home/sasha/.mujoco/mjkey.txt")
-
-env = AntMaze()
-# env = AntV2()
-# rand(actionspace(env))
-
-# step!(env)
-setaction!(env, zeros(8))
-axes(statespace(env))
-axes(statespace(getsim(env)))
-getstate(env)
-for t = 1:1000
-    step!(env)
-    setaction!(env, zeros(8))
-    # states[:, t] .= getstate(env)
-end
-
-visualize(env, controller = (e -> setaction!(e, randn(8))))
 
 end # module
