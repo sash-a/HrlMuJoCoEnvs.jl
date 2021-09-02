@@ -70,7 +70,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntMaze)
     @uviews state begin
         shapedstate = statespace(env)(state)
         height = LyceumMuJoCo._torso_height(shapedstate, env)
-        done = !(all(isfinite, state) && 0.2 <= height <= 1)
+        done = !(all(isfinite, state) && 0.38 <= height <= 1)
         done
     end
 end

@@ -3,6 +3,7 @@ mutable struct AntV2{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     statespace::S
     obsspace::O
     last_torso_x::Float64
+    randreset_distribution::Uniform{Float64}
 
     function AntV2(sim::MJSim)
         sspace = MultiShape(
@@ -13,7 +14,7 @@ mutable struct AntV2{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
             cropped_qpos = VectorShape(Float64, sim.m.nq - 2),
             qvel = VectorShape(Float64, sim.m.nv)
         )
-        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0)
+        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, Uniform(-0.1, 0.1))
         reset!(env)
     end
 end
@@ -37,7 +38,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntV2)
     @uviews state begin
         shapedstate = statespace(env)(state)
         height = LyceumMuJoCo._torso_height(shapedstate, env)
-        done = !(all(isfinite, state) && 0.2 <= height<= 1)
+        done = !(all(isfinite, state) && 0.38 <= height <= 1)
         done
     end
 end
@@ -47,10 +48,10 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AntV2)
     checkaxes(actionspace(env), action)
     @uviews state begin
         shapedstate = statespace(env)(state)
-        # alive_bonus = 1.0
+        alive_bonus = 1.0
         reward = (LyceumMuJoCo._torso_x(shapedstate, env) - shapedstate.last_torso_x) / timestep(env)
-        # reward += alive_bonus
-        # reward -= 0.5 * sum(x->x^2, action)
+        reward += alive_bonus
+        reward -= 5e-4 * sum(x->x^2, action)
         reward
     end
 end
