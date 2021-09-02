@@ -27,18 +27,15 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
     end
 end
 
-function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=100, rng=MersenneTwister(), outfile="tmp.xml")
+function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=100, seed=123, outfile="tmp.xml")
     antmodelpath = joinpath(@__DIR__, "..", "assets", assetfile)
-    MazeStructure.create_world(antmodelpath, structure=MazeStructure.wall_structure, filename=outfile)  # TODO needs to only be done once per proc
+    MazeStructure.create_world(antmodelpath, structure=MazeStructure.wall_structure, filename=outfile)
     modelpath = joinpath(@__DIR__, "..", "assets", outfile)
 
-    @show modelpath
-
-    Tuple(Flagrun(s, structure=MazeStructure.wall_structure, interval=interval, rng=rng) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
+    Tuple(Flagrun(s, structure=MazeStructure.wall_structure, interval=interval, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
 end
 
-AntFlagrun(;interval=100, rng=MersenneTwister()) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, rng=rng))
-SwimmerFlagrun(;interval=100, rng=MersenneTwister()) = first(tconstruct(Flagrun, "swimmer.xml", 1; interval=interval, rng=rng))
+AntFlagrun(;interval=100, seed=123) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, seed=seed))
 
 function LyceumMuJoCo.step!(env::Flagrun)
     env.evalrew -= env.d_old
@@ -53,7 +50,6 @@ function LyceumMuJoCo.step!(env::Flagrun)
 end
 
 function LyceumMuJoCo.getobs!(obs, env::Flagrun)
-    # TODO sensor readings
     checkaxes(obsspace(env), obs)
     qpos = env.sim.d.qpos
     @views @uviews qpos obs begin
@@ -72,7 +68,7 @@ end
 
 function _createtarget(env::Flagrun)
     offset = rand(env.rng, Uniform(-1, 1), 2)
-    return offset * 3 + _torso_xy(env)
+    return offset * 5 + _torso_xy(env)
     # dist = Euclidean()
     # targ = [20 * rand(env.rng) - 10, 20 * rand(env.rng) - 10]
     # while dist(_torso_xy(env), targ) < 1
