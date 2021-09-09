@@ -1,3 +1,5 @@
+MAZE_DIST_THRESH = 20
+
 mutable struct AntMaze{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     sim::SIM
     statespace::S
@@ -6,33 +8,35 @@ mutable struct AntMaze{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     structure::Matrix{AbstractBlock}
     target::Vector{Number}
     t::Int
+    d_old::Float64
+    rng::MersenneTwister
 
-    function AntMaze(sim::MJSim; structure=MazeStructure.basic_maze_structure)
+    function AntMaze(sim::MJSim; structure=MazeStructure.basic_maze_structure, rng=MersenneTwister())
         sspace = MultiShape(
-            targetvec = VectorShape(Float64, 2),
+            targetvec=VectorShape(Float64, 2),
             simstate=statespace(sim),
             last_torso_x=ScalarShape(Float64)
         )
         ospace = MultiShape(
-            targetvec = VectorShape(Float64, 2),
-            cropped_qpos = VectorShape(Float64, sim.m.nq - 2),
-            qvel = VectorShape(Float64, sim.m.nv)
+            targetvec=VectorShape(Float64, 2),
+            d_old=VectorShape(Float64, 1),
+            cropped_qpos=VectorShape(Float64, sim.m.nq - 2),
+            qvel=VectorShape(Float64, sim.m.nv)
         )
-        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0)
+        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0, 0, rng)
         reset!(env)
     end
 end
 
-function LyceumBase.tconstruct(::Type{AntMaze}, n::Integer; structure::Matrix{<:AbstractBlock}=MazeStructure.basic_maze_structure, filename="tmp.xml")
+function LyceumBase.tconstruct(::Type{AntMaze}, n::Integer; structure::Matrix{<:AbstractBlock}=MazeStructure.basic_maze_structure, seed=nothing, filename="tmp.xml")
     antmodelpath = joinpath(@__DIR__, "..", "assets", "ant.xml")
     MazeStructure.create_world(antmodelpath, structure=structure, filename=filename)
     modelpath = joinpath(@__DIR__, "..", "assets", filename)
 
-    Tuple(AntMaze(s, structure=structure) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
+    Tuple(AntMaze(s, structure=structure, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
 end
 
-AntMaze() = first(tconstruct(AntMaze, 1))
-AntMaze(structure::Matrix{<: AbstractBlock}) = first(tconstruct(AntMaze, 1; structure=structure))
+AntMaze(;structure::Matrix{<: AbstractBlock}=MazeStructure.basic_maze_structure, seed=nothing) = first(tconstruct(AntMaze, 1; structure=structure, seed=seed))
 
 function LyceumMuJoCo.step!(env::AntMaze)
     env.t += 1
@@ -49,19 +53,28 @@ function LyceumMuJoCo.getobs!(obs, env::AntMaze)
         angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
 
         copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
+        copyto!(shaped.d_old, [env.d_old / 1000])
         copyto!(shaped.cropped_qpos, qpos[3:end])
         copyto!(shaped.qvel, env.sim.d.qvel)
         clamp!(shaped.qvel, -10, 10)
     end
 
-    # vcat(sin(angle_to_target), cos(angle_to_target), obs)
     obs
+end
+
+function _movetarget!(env::AntMaze)
+    zones = [(12, 20, -4, 12), (-4, 20, 12, 20), (-4, 4, -4, 12)]  # [(xmin, xmax, ymin, ymax)...]
+    areas = map(((xmin, xmax, ymin, ymax),)->((xmax-xmin)*(ymax-ymin)), zones)
+    weighting = map(a->a/sum(areas), areas)
+    xmin, xmax, ymin, ymax = sample(zones, Weights(weighting))
+
+    env.target = [(xmin + xmax) * rand(env.rng) - xmin, (ymin + ymax) * rand(env.rng) - ymin]
+    getsim(env).mn[:geom_pos][4:5] = env.target
 end
 
 function LyceumMuJoCo.reset!(env::AntMaze)
     env.t = 0
-    env.target = [24 * rand() - 4, 24 * rand() - 4]
-    @show env.target
+    _movetarget!(env)
     WalkerBase._reset!(env)
 end
 
@@ -70,7 +83,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntMaze)
     @uviews state begin
         shapedstate = statespace(env)(state)
         height = LyceumMuJoCo._torso_height(shapedstate, env)
-        done = !(all(isfinite, state) && 0.38 <= height <= 1)
+        done = !(all(isfinite, state) && 0.38 <= height <= 1) || env.d_old < FLAGRUN_DIST_THRESH
         done
     end
 end
@@ -80,12 +93,12 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AntMaze)
     checkaxes(actionspace(env), action)
     @uviews state begin
         shapedstate = statespace(env)(state)
-        d = Euclidean()(_torso_xy(shapedstate, env), env.target)
-        d < 5 ? 1 : 0
+        env.d_old = sqeuclidean(_torso_xy(shapedstate, env), env.target)
+        env.d_old < MAZE_DIST_THRESH ? 1 : 0
     end
 end
 
-LyceumMuJoCo.geteval(env::AntMaze) = Euclidean()(_torso_xy(env), [0, 16]) < 5 ? 1 : 0
+LyceumMuJoCo.geteval(env::AntMaze) = sqeuclidean(_torso_xy(env), [0, 16]) < MAZE_DIST_THRESH ? 1 : 0
 
 @inline _torso_xy(env::AntMaze) = env.sim.d.qpos[1:2]
 @inline _torso_xy(shapedstate::ShapedView, ::AntMaze) = shapedstate.simstate.qpos[1:2]

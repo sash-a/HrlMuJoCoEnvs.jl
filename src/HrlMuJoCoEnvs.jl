@@ -3,11 +3,13 @@ module HrlMuJoCoEnvs
 using Distributions
 using Random
 using UnsafeArrays
-import UnsafeArrays:@uviews
-using Distances:Euclidean
+using LinearAlgebra
+import UnsafeArrays: @uviews
+using Distances: sqeuclidean, cosine_dist
 
 using LightXML
 using LyceumBase, LyceumBase.Tools, LyceumMuJoCo, MuJoCo, Shapes
+using StatsBase
 
 include("MazeStructure.jl")
 using .MazeStructure

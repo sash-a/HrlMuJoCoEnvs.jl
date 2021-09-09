@@ -67,7 +67,19 @@
         </body>
       </body>
     </body>
+    <geom name="target_geom" pos="5 5 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.4 0.4 1 1"/>
+    <geom name="recomend_geom" pos="4 4 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.4 1 0.4 1"/>
+    <geom name="goal" pos="0 16 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="1 0 0.4 1"/>
+
   </worldbody>
+
+  <!-- <tendon>
+    <spatial limited="true" range="0 0.6" width="0.005">
+    <site site="torso"/>
+    <site site="target"/>
+    </spatial>
+  </tendon> -->
+
   <actuator>
     <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="hip_4" gear="150"/>
     <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="ankle_4" gear="150"/>
