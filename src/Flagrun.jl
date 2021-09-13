@@ -35,13 +35,13 @@ end
 
 function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=100, seed=nothing, outfile="tmp.xml")
     antmodelpath = joinpath(@__DIR__, "..", "assets", assetfile)
-    MazeStructure.create_world(antmodelpath, structure=MazeStructure.basic_maze_structure, filename=outfile)
+    MazeStructure.create_world(antmodelpath, structure=MazeStructure.wall_structure, filename=outfile)
     modelpath = joinpath(@__DIR__, "..", "assets", outfile)
 
     Tuple(Flagrun(s, structure=MazeStructure.wall_structure, interval=interval, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
 end
 
-AntFlagrun(;interval=100, seed=123) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, seed=seed))
+AntFlagrun(;interval=100, seed=nothing) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, seed=seed))
 
 function LyceumMuJoCo.step!(env::Flagrun)
     env.evalrew -= env.d_old
@@ -120,7 +120,7 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::Flagrun)
     checkaxes(actionspace(env), action)
     rew = @uviews state begin
         shapedstate = statespace(env)(state)
-        d_new = sqeuclidean(_torso_xy(env), env.target)  # this should possibly go in step!
+        d_new = sqeuclidean(_torso_xy(shapedstate, env), env.target)  # this should possibly go in step!
         r = (d_new - env.d_old) / timestep(env)
         if d_new < FLAGRUN_DIST_THRESH && env.rew_once
             r += 5000
