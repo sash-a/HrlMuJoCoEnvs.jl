@@ -69,7 +69,7 @@ function _movetarget!(env::AntMaze)
     xmin, xmax, ymin, ymax = sample(zones, Weights(weighting))
 
     env.target = [(xmin + xmax) * rand(env.rng) - xmin, (ymin + ymax) * rand(env.rng) - ymin]
-    getsim(env).mn[:geom_pos][4:5] = env.target
+    getsim(env).mn[:geom_pos][ngeom=:target_geom] = [env.targ..., 0]
 end
 
 function LyceumMuJoCo.reset!(env::AntMaze)
@@ -99,6 +99,7 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AntMaze)
 end
 
 LyceumMuJoCo.geteval(env::AntMaze) = sqeuclidean(_torso_xy(env), [0, 16]) < MAZE_DIST_THRESH ? 1 : 0
+
 
 @inline _torso_xy(env::AntMaze) = env.sim.d.qpos[1:2]
 @inline _torso_xy(shapedstate::ShapedView, ::AntMaze) = shapedstate.simstate.qpos[1:2]

@@ -18,5 +18,6 @@ include("WalkerBase.jl")
 include("Ant-v2.jl")  # must be included before maze and flagrun
 include("AntMaze.jl")
 include("Flagrun.jl")
+include("AntGather.jl")
 
 end # module

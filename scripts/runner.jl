@@ -6,21 +6,23 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
-env = HrlMuJoCoEnvs.AntFlagrun()
-statespace(env)
-model = getsim(env).mn
+env = HrlMuJoCoEnvs.AntGather()
+# model = getsim(env).mn
 # model[:geom_pos]
-print(model[:geom_pos][4:6])
+# i = 2
+# model[:geom_pos][ngeom=Symbol("apple_$i")] = [1,1,0]
+# model[:geom_pos][ngeom=:apple_2] = [3,2,1]
+# getsim(env).mn[:geom_pos][ngeom=:apple_2]
+# @show getsim(env).mn[:geom_pos][10:20]
 
-getsim(env).m
+# getsim(env).m
 
-getsim(env).mn[:geom_pos][4:6]=[5,1,1]
+for i in 1:100
+    reset!(env)
+    step!(env)
+    o = getobs(env)
+    setaction!(env, zeros(8))
+    @show getreward(env)
+end
 
-# for t = 1:10
-#     step!(env)
-#     setaction!(env, zeros(8))
-#     println(getsim(env).mn[:geom_pos][7:9])
-#     # println(LyceumMuJoCo._torso_height(env))
-#     # @show LyceumMuJoCo._torso_ang(env)
-# end
 visualize(env, controller = (e -> setaction!(e, zeros(8))))

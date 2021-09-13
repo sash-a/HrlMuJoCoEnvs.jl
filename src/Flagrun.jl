@@ -1,4 +1,4 @@
-const FLAGRUN_DIST_THRESH = 4
+const FLAGRUN_DIST_THRESH = 1
 
 mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
     sim::SIM
@@ -87,7 +87,7 @@ function _movetarget!(env::Flagrun, pos::Vector{T}) where T
     end
 
     # bit of a hack: moving the extra geom in the xml to indicate target position
-    getsim(env).mn[:geom_pos][4:5] = targ
+    getsim(env).mn[:geom_pos][ngeom=:target_geom] = [targ..., 0]
     env.target = targ
     env.d_old = sqeuclidean(pos, env.target)
     # println("moved target: $(_torso_xy(env)) - $(targ) - $(sqeuclidean(pt, targ))")
