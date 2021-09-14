@@ -121,7 +121,7 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::Flagrun)
     rew = @uviews state begin
         shapedstate = statespace(env)(state)
         d_new = sqeuclidean(_torso_xy(shapedstate, env), env.target)  # this should possibly go in step!
-        r = (d_new - env.d_old) / timestep(env)
+        r = (env.d_old - d_new) / timestep(env)
         if d_new < FLAGRUN_DIST_THRESH && env.rew_once
             r += 5000
             env.rew_once = false
