@@ -11,7 +11,9 @@ getpos(::Collectible) = (0, 0)
 getpos(a::Apple) = a.pos
 getpos(a::Bomb) = a.pos
 
-mutable struct AntGather{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
+abstract type AbstractGatherEnv <: WalkerBase.AbstractWalkerMJEnv end
+
+mutable struct AntGather{SIM<:MJSim, S, O} <: AbstractGatherEnv
     sim::SIM
     statespace::S
     obsspace::O
@@ -25,7 +27,7 @@ mutable struct AntGather{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     activity_range::Float64
     robot_object_spacing::Float64
     catch_range::Float64
-    n_bins::Int
+    nbins::Int
     sensor_range::Float64
     sensor_span::Float64
     dying_cost::Float64
@@ -42,7 +44,7 @@ mutable struct AntGather{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
                         activity_range=6.,
                         robot_object_spacing=2.,
                         catch_range=1.,
-                        n_bins=10,
+                        nbins=10,
                         sensor_range=6.,
                         sensor_span=π,
                         dying_cost=-10,
@@ -51,13 +53,13 @@ mutable struct AntGather{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
                     
         sspace = MultiShape(
             simstate=statespace(sim),
-            sensor_readings = VectorShape(Float64, n_bins * 2),
+            sensor_readings = VectorShape(Float64, nbins * 2),
             last_torso_x=ScalarShape(Float64)
         )
         ospace = MultiShape(
             cropped_qpos = VectorShape(Float64, sim.m.nq - 2),
             qvel = VectorShape(Float64, sim.m.nv),
-            sensor_readings = VectorShape(Float64, n_bins * 2)
+            sensor_readings = VectorShape(Float64, nbins * 2)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0,            
                                                                 napples,
@@ -65,7 +67,7 @@ mutable struct AntGather{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
                                                                 activity_range,
                                                                 robot_object_spacing,
                                                                 catch_range,
-                                                                n_bins,
+                                                                nbins,
                                                                 sensor_range,
                                                                 sensor_span,
                                                                 dying_cost,
@@ -89,21 +91,21 @@ function LyceumBase.tconstruct(::Type{AntGather}, n::Integer;
 end
 
 AntGather(;viz=false) = first(LyceumBase.tconstruct(AntGather, 1; viz=viz))
-collectibles(env::AntGather) = merge(env.apples, env.bombs)
+collectibles(env::AbstractGatherEnv) = merge(env.apples, env.bombs)
 
-function _sensor_readings(env::AntGather)
-    apple_readings = zeros(env.n_bins)
-    bomb_readings = zeros(env.n_bins)
+function _sensor_readings(env::AbstractGatherEnv)
+    apple_readings = zeros(env.nbins)
+    bomb_readings = zeros(env.nbins)
     robot_x, robot_y = _torso_xy(env)
 
     collectibles_list = collect(keys(collectibles(env)))
     collectible_dists = map(c-> (c, sqeuclidean(collect(getpos(c)), [robot_x, robot_y])), collectibles_list)
     sorted_collectibles = sort(collectible_dists; by=c->last(c), rev=true)
-    bin_res = env.sensor_span / env.n_bins
+    bin_res = env.sensor_span / env.nbins
     ori = LyceumMuJoCo._torso_ang(env)
 
     if env.viz
-        for i in 1:env.n_bins
+        for i in 1:env.nbins
             getsim(env).mn[:geom_pos][ngeom=Symbol("apple_sensor_$i")] = [0, 0, -2]
             getsim(env).mn[:geom_pos][ngeom=Symbol("bomb_sensor_$i")] = [0, 0, -2]
         end
@@ -148,7 +150,7 @@ function _sensor_readings(env::AntGather)
     apple_readings, bomb_readings
 end
 
-function _collect_collectibles!(env::AntGather)
+function _collect_collectibles!(env::AbstractGatherEnv)
     pos = _torso_xy(env)
     r = 0
     collected = []
@@ -170,7 +172,7 @@ function _collect_collectibles!(env::AntGather)
     r
 end
 
-function _move_collectibles!(env::AntGather)
+function _move_collectibles!(env::AbstractGatherEnv)
     env.apples = Dict{Apple, Int}()
     env.bombs = Dict{Bomb, Int}()
 
@@ -232,7 +234,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntGather)
     end
 end
 
-function LyceumMuJoCo.getreward(state, action, ::Any, env::AntGather)
+function LyceumMuJoCo.getreward(state, action, ::Any, env::AbstractGatherEnv)
     checkaxes(statespace(env), state)
     checkaxes(actionspace(env), action)
 

@@ -12,6 +12,7 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
     t::Int
     interval::Int
     d_old::Float64
+    targ_start_dist::Float64
     rew_once::Bool
     rng::MersenneTwister
 
@@ -28,7 +29,7 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
             qvel=VectorShape(Float64, sim.m.nv)
         )
         env = new{typeof(sim),typeof(sspace),typeof(ospace)}(
-            sim, sspace, ospace, 0, Uniform(-0.1, 0.1), structure, [0, 0], 0f0, 0, interval, 0, true, rng)
+            sim, sspace, ospace, 0, Uniform(-0.1, 0.1), structure, [0, 0], 0f0, 0, interval, 0, 0, true, rng)
         reset!(env)
     end
 end
@@ -65,7 +66,7 @@ function LyceumMuJoCo.getobs!(obs, env::Flagrun)
         angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
         copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
         # copyto!(shaped.targetvec, normalize(targetvec))
-        copyto!(shaped.d_old, [env.d_old / 1000])
+        copyto!(shaped.d_old, [env.d_old / env.targ_start_dist])
         copyto!(shaped.cropped_qpos, qpos[3:end])
         copyto!(shaped.qvel, env.sim.d.qvel)
         clamp!(shaped.qvel, -10, 10)
@@ -79,7 +80,7 @@ function _movetarget!(env::Flagrun, pos::Vector{T}) where T
     targ = offset * 5 + pos
     
     # targ = [20 * rand(env.rng) - 10, 20 * rand(env.rng) - 10]
-    while sqeuclidean(pos, targ) < FLAGRUN_DIST_THRESH
+    while euclidean(pos, targ) < FLAGRUN_DIST_THRESH
         # targ = [20 * rand(env.rng) - 10, 20 * rand(env.rng) - 10]
 
         offset = rand(env.rng, Uniform(-1, 1), 2)
@@ -89,8 +90,9 @@ function _movetarget!(env::Flagrun, pos::Vector{T}) where T
     # bit of a hack: moving the extra geom in the xml to indicate target position
     getsim(env).mn[:geom_pos][ngeom=:target_geom] = [targ..., 0]
     env.target = targ
-    env.d_old = sqeuclidean(pos, env.target)
-    # println("moved target: $(_torso_xy(env)) - $(targ) - $(sqeuclidean(pt, targ))")
+    env.d_old = euclidean(pos, env.target)
+    env.targ_start_dist = env.d_old
+    # println("moved target: $(_torso_xy(env)) - $(targ) - $(euclidean(pt, targ))")
     targ
 end
 
@@ -120,11 +122,12 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::Flagrun)
     checkaxes(actionspace(env), action)
     rew = @uviews state begin
         shapedstate = statespace(env)(state)
-        d_new = sqeuclidean(_torso_xy(shapedstate, env), env.target)  # this should possibly go in step!
-        r = (env.d_old - d_new) / timestep(env)
+        d_new = euclidean(_torso_xy(shapedstate, env), env.target)  # this should possibly go in step!
+        # r = (env.d_old - d_new) / timestep(env)
+        r = 1 - d_new / env.targ_start_dist
         if d_new < FLAGRUN_DIST_THRESH && env.rew_once
-            r += 5000
-            env.rew_once = false
+            r += 1
+            # env.rew_once = false
             # _movetarget!(env)  # create new target if close to this one
         end
         env.d_old = d_new
