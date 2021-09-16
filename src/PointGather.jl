@@ -30,7 +30,7 @@ mutable struct PointGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
                         catch_range=1.5,
                         nbins=10,
                         sensor_range=6.,
-                        sensor_span=π,
+                        sensor_span=2*π,
                         dying_cost=-10,
                         rng=MersenneTwister(),
                         viz=false)
