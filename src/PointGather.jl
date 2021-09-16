@@ -27,7 +27,7 @@ mutable struct PointGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
                         nbombs=8,
                         activity_range=6.,
                         robot_object_spacing=2.,
-                        catch_range=1.,
+                        catch_range=1.5,
                         nbins=10,
                         sensor_range=6.,
                         sensor_span=π,
@@ -38,13 +38,11 @@ mutable struct PointGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
         sspace = MultiShape(
             simstate=statespace(sim),
             last_torso_x=ScalarShape(Float64),
-            target_pos = VectorShape(Float64, 2),
             sensor_readings = VectorShape(Float64, nbins * 2)
         )
         ospace = MultiShape(
             agent_pos = VectorShape(Float64, 2),
             agent_vel = VectorShape(Float64, 2),
-            target_pos = VectorShape(Float64, 2),
             sensor_readings = VectorShape(Float64, nbins * 2)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, [0, 0], 0,            
@@ -87,7 +85,6 @@ function LyceumMuJoCo.getobs!(obs, env::PointGatherEnv)
     @uviews shaped @inbounds begin
         shaped.agent_pos .= dn.xpos[:x, :agent], dn.xpos[:y, :agent]
         shaped.agent_vel .= dn.qvel[:agent_x], dn.qvel[:agent_y]
-        shaped.target_pos .= dn.xpos[:x, :target], dn.xpos[:y, :target]
         shaped.sensor_readings .= vcat(_sensor_readings(env)...)
     end
     obs
