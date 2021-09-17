@@ -64,12 +64,12 @@ mutable struct PointGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
 end
 
 function LyceumBase.tconstruct(::Type{PointGatherEnv}, n::Integer; 
-                                structure::Matrix{<:AbstractBlock}=MazeStructure.wall_structure, 
+                                structure::Matrix{<:AbstractBlock}=WorldStructure.wall_structure, 
                                 napples::Int=8, nbombs::Int=8, nbins::Int=10, seed=nothing, viz=false)
-    antmodelpath = joinpath(@__DIR__, "..", "assets", "pointmass.xml")
+    antmodelpath = joinpath(AssetManager.dir, "pointmass.xml")
     outfile = "pointgathertmp.xml"
-    MazeStructure.create_world(antmodelpath, napples, nbombs, nbins; structure=structure, wsize=6, viz=viz, filename=outfile)
-    modelpath = joinpath(@__DIR__, "..", "assets", outfile)
+    WorldStructure.create_world(antmodelpath, napples, nbombs, nbins; structure=structure, wsize=6, viz=viz, filename=outfile)
+    modelpath = joinpath(AssetManager.dir, outfile)
 
     Tuple(PointGatherEnv(s; napples=napples, nbombs=nbombs, rng=MersenneTwister(seed), viz=viz) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
 end

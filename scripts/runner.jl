@@ -6,7 +6,7 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
-env = HrlMuJoCoEnvs.PointGatherEnv()
+env = HrlMuJoCoEnvs.AntGatherEnv()
 # model = getsim(env).mn
 # model[:geom_pos]
 # i = 2
@@ -21,7 +21,7 @@ for i in 1:100
     reset!(env)
     step!(env)
     o = getobs(env)
-    setaction!(env, zeros(2))
+    setaction!(env, zeros(8))
     @show getreward(env)
 end
 

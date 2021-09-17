@@ -3,14 +3,13 @@ module WalkerBase
 using Distributions
 using Random
 using UnsafeArrays
-import UnsafeArrays: @uviews
-using LyceumBase, LyceumBase.Tools, LyceumMuJoCo, MuJoCo, Shapes
-
+using UnsafeArrays: @uviews
+using LyceumBase, LyceumBase.Tools, LyceumMuJoCo, Shapes
 
 abstract type AbstractWalkerMJEnv <: AbstractMuJoCoEnvironment end
 
 function LyceumBase.tconstruct(T::Type{<:AbstractWalkerMJEnv}, n::Integer, modelpath::String)
-    Tuple(T(s) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
+    Tuple(T(s) for s in LyceumBase.tconstruct(LyceumMuJoCo.MJSim, n, modelpath, skip=4))
 end
 
 @inline LyceumMuJoCo.getsim(env::T) where T <: AbstractWalkerMJEnv = env.sim

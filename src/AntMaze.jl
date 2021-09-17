@@ -11,7 +11,7 @@ mutable struct AntMaze{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     d_old::Float64
     rng::MersenneTwister
 
-    function AntMaze(sim::MJSim; structure=MazeStructure.basic_maze_structure, rng=MersenneTwister())
+    function AntMaze(sim::MJSim; structure=WorldStructure.basic_maze_structure, rng=MersenneTwister())
         sspace = MultiShape(
             targetvec=VectorShape(Float64, 2),
             simstate=statespace(sim),
@@ -28,15 +28,15 @@ mutable struct AntMaze{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     end
 end
 
-function LyceumBase.tconstruct(::Type{AntMaze}, n::Integer; structure::Matrix{<:AbstractBlock}=MazeStructure.basic_maze_structure, seed=nothing, filename="tmp.xml")
-    antmodelpath = joinpath(@__DIR__, "..", "assets", "ant.xml")
-    MazeStructure.create_world(antmodelpath, structure=structure, filename=filename)
-    modelpath = joinpath(@__DIR__, "..", "assets", filename)
+function LyceumBase.tconstruct(::Type{AntMaze}, n::Integer; structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing, filename="tmp.xml")
+    antmodelpath = joinpath(AssetManager.dir, "ant.xml")
+    WorldStructure.create_world(antmodelpath, structure=structure, filename=filename)
+    modelpath = joinpath(AssetManager.dir, filename)
 
     Tuple(AntMaze(s, structure=structure, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
 end
 
-AntMaze(;structure::Matrix{<: AbstractBlock}=MazeStructure.basic_maze_structure, seed=nothing) = first(tconstruct(AntMaze, 1; structure=structure, seed=seed))
+AntMaze(;structure::Matrix{<: AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing) = first(tconstruct(AntMaze, 1; structure=structure, seed=seed))
 
 function LyceumMuJoCo.step!(env::AntMaze)
     env.t += 1

@@ -19,7 +19,7 @@ mutable struct AntV2{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     end
 end
 
-AntV2() = first(tconstruct(AntV2, 1, joinpath(@__DIR__, "..", "assets", "ant.xml")))
+AntV2() = first(tconstruct(AntV2, 1, joinpath(AssetManager.dir, "ant.xml")))
 
 function LyceumMuJoCo.getobs!(obs, env::AntV2)
     checkaxes(obsspace(env), obs)

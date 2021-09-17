@@ -16,7 +16,7 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
     rew_once::Bool
     rng::MersenneTwister
 
-    function Flagrun(sim::MJSim; structure=MazeStructure.wall_structure, interval=100, rng=MersenneTwister())
+    function Flagrun(sim::MJSim; structure=WorldStructure.wall_structure, interval=100, rng=MersenneTwister())
         sspace = MultiShape(
             targetvec=VectorShape(Float64, 2),
             simstate=statespace(sim),
@@ -35,11 +35,11 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
 end
 
 function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=100, seed=nothing, outfile="tmp.xml")
-    antmodelpath = joinpath(@__DIR__, "..", "assets", assetfile)
-    MazeStructure.create_world(antmodelpath, structure=MazeStructure.wall_structure, filename=outfile)
-    modelpath = joinpath(@__DIR__, "..", "assets", outfile)
+    antmodelpath = joinpath(AssetManager.dir, assetfile)
+    WorldStructure.create_world(antmodelpath, structure=WorldStructure.wall_structure, filename=outfile)
+    modelpath = joinpath(AssetManager.dir, outfile)
 
-    Tuple(Flagrun(s, structure=MazeStructure.wall_structure, interval=interval, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
+    Tuple(Flagrun(s, structure=WorldStructure.wall_structure, interval=interval, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
 end
 
 AntFlagrun(;interval=100, seed=nothing) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, seed=seed))

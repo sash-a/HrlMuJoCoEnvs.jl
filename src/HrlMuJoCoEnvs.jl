@@ -11,14 +11,18 @@ using LightXML
 using LyceumBase, LyceumBase.Tools, LyceumMuJoCo, MuJoCo, Shapes
 using StatsBase
 
-include("MazeStructure.jl")
-using .MazeStructure
+include("../assets/AssetManager.jl")
+using .AssetManager
+
+include("WorldStructure.jl")
+using .WorldStructure
 
 include("WalkerBase.jl")
 include("Ant-v2.jl")  # must be included before maze and flagrun
 include("AntMaze.jl")
 include("Flagrun.jl")
-include("AntGather.jl")
-include("PointGather.jl")
+include("Gather/GatherBase.jl")
+include("Gather/AntGather.jl")
+include("Gather/PointGather.jl")
 
 end # module
