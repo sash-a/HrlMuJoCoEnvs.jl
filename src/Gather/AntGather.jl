@@ -25,11 +25,11 @@ mutable struct AntGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
     function AntGatherEnv(sim::MJSim; structure=WorldStructure.wall_structure,                                                                 
                         napples=8,
                         nbombs=8,
-                        activity_range=6.,
+                        activity_range=10.,
                         robot_object_spacing=2.,
-                        catch_range=1.5,
+                        catch_range=1,
                         nbins=10,
-                        sensor_range=6.,
+                        sensor_range=8.,
                         sensor_span=2*π,
                         rng=MersenneTwister(),
                         viz=false)
@@ -37,12 +37,14 @@ mutable struct AntGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
         sspace = MultiShape(
             simstate=statespace(sim),
             sensor_readings = VectorShape(Float64, nbins * 2),
-            last_torso_x=ScalarShape(Float64)
+            last_torso_x=ScalarShape(Float64),
+            t=ScalarShape(Int)
         )
         ospace = MultiShape(
-            cropped_qpos = VectorShape(Float64, sim.m.nq - 2),
+            cropped_qpos = VectorShape(Float64, sim.m.nq),
             qvel = VectorShape(Float64, sim.m.nv),
-            sensor_readings = VectorShape(Float64, nbins * 2)
+            sensor_readings = VectorShape(Float64, nbins * 2),
+            t=ScalarShape(Int)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0,            
                                                                 napples,
@@ -64,9 +66,9 @@ end
 function LyceumBase.tconstruct(::Type{AntGatherEnv}, n::Integer; 
                                 structure::Matrix{<:AbstractBlock}=WorldStructure.wall_structure, 
                                 napples::Int=8, nbombs::Int=8, nbins::Int=10, seed=nothing, viz=false)
-    antmodelpath = joinpath(AssetManager.dir, "ant.xml")
+    antmodelpath = joinpath(AssetManager.dir, "easier_ant.xml")
     outfile = "gathertmp.xml"
-    WorldStructure.create_world(antmodelpath, napples, nbombs, nbins; structure=structure, wsize=6, viz=viz, filename=outfile)
+    WorldStructure.create_world(antmodelpath, napples, nbombs, nbins; structure=structure, wsize=8, viz=viz, filename=outfile)
     modelpath = joinpath(AssetManager.dir, outfile)
     
     Tuple(AntGatherEnv(s; structure=structure, napples=napples, nbombs=nbombs, rng=MersenneTwister(seed), viz=viz) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
@@ -74,16 +76,21 @@ end
 
 AntGatherEnv(;viz=false) = first(LyceumBase.tconstruct(AntGatherEnv, 1; viz=viz))
 
+function LyceumMuJoCo.step!(env::AntGatherEnv)
+    env.t += 1
+    WalkerBase._step!(env)
+end
+
 function LyceumMuJoCo.getobs!(obs, env::AntGatherEnv)
-    # TODO sensor readings
     checkaxes(obsspace(env), obs)
     qpos = env.sim.d.qpos
     @views @uviews qpos obs begin
         shaped = obsspace(env)(obs)
 
-        copyto!(shaped.cropped_qpos, qpos[3:end])
+        copyto!(shaped.cropped_qpos, qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
         copyto!(shaped.sensor_readings, vcat(_sensor_readings(env)...))
+        shaped.t = env.t
         clamp!(shaped.qvel, -10, 10)
     end
 
@@ -91,6 +98,7 @@ function LyceumMuJoCo.getobs!(obs, env::AntGatherEnv)
 end
 
 function LyceumMuJoCo.reset!(env::AntGatherEnv)
+    env.t = 0
     _move_collectibles!(env)
     WalkerBase._reset!(env)
 end
@@ -100,7 +108,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntGatherEnv)
     @uviews state begin
         shapedstate = statespace(env)(state)
         height = LyceumMuJoCo._torso_height(shapedstate, env)
-        done = !(all(isfinite, state) && 0.38 <= height <= 1)
+        done = !(all(isfinite, state) && 0.2 <= height <= 1)
         done
     end
 end

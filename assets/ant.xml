@@ -67,8 +67,8 @@
         </body>
       </body>
     </body>
-    <geom name="target_geom" pos="5 5 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.4 0.4 1 1"/>
-    <geom name="recomend_geom" pos="4 4 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.9 0 1 1"/>
+    <geom name="target_geom" pos="5 5 -1" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.4 0.4 1 1"/>
+    <geom name="recomend_geom" pos="4 4 -1" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.9 0 1 1"/>
     <geom name="goal" pos="0 16 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="1 0 0 1"/>
   </worldbody>
 
