@@ -12,7 +12,7 @@
     <texture type="skybox" builtin="gradient" width="100" height="100" rgb1="1 1 1" rgb2="0 0 0" />
     <texture name="texgeom" type="cube" builtin="flat" mark="cross" width="127" height="1278" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01" />
     <texture name="texplane" type="2d" builtin="checker" rgb1="0 0 0" rgb2="0.8 0.8 0.8" width="100" height="100" />
-    <material name='MatPlane' texture="texplane" shininess="1" texrepeat="60 60" specular="1"  reflectance="0.5" />
+    <material name='MatPlane' texture="texplane" shininess="1" texrepeat="60 60" specular="1" reflectance="0.5" />
     <material name='geom' texture="texgeom" texuniform="true" />
   </asset>
   <worldbody>
@@ -66,11 +66,9 @@
         </body>
       </body>
     </body>
-
-    <geom name="target_geom" pos="5 5 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.4 0.4 1 1"/>
-    <geom name="recomend_geom" pos="4 4 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.9 0 1 1"/>
-    <geom name="goal" pos="0 16 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="1 0 0 1"/>
-
+    <geom name="target_geom" pos="5 5 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.4 0.4 1 1" />
+    <geom name="recomend_geom" pos="4 4 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="0.9 0 1 1" />
+    <geom name="goal" pos="0 16 0" size="0.25" type="sphere" material="" contype="2" conaffinity="2" condim="6" rgba="1 0 0 1" />
   </worldbody>
   <actuator>
     <motor joint="hip_4" ctrlrange="-30.0 30.0" ctrllimited="true" />

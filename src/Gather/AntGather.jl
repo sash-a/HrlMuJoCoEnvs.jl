@@ -27,7 +27,7 @@ mutable struct AntGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
                         nbombs=8,
                         activity_range=10.,
                         robot_object_spacing=2.,
-                        catch_range=1,
+                        catch_range=1.,
                         nbins=10,
                         sensor_range=8.,
                         sensor_span=2*π,
@@ -71,7 +71,7 @@ function LyceumBase.tconstruct(::Type{AntGatherEnv}, n::Integer;
     WorldStructure.create_world(antmodelpath, napples, nbombs, nbins; structure=structure, wsize=8, viz=viz, filename=outfile)
     modelpath = joinpath(AssetManager.dir, outfile)
     
-    Tuple(AntGatherEnv(s; structure=structure, napples=napples, nbombs=nbombs, rng=MersenneTwister(seed), viz=viz) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
+    Tuple(AntGatherEnv(s; structure=structure, napples=napples, nbombs=nbombs, rng=MersenneTwister(seed), viz=viz) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
 end
 
 AntGatherEnv(;viz=false) = first(LyceumBase.tconstruct(AntGatherEnv, 1; viz=viz))
@@ -90,7 +90,7 @@ function LyceumMuJoCo.getobs!(obs, env::AntGatherEnv)
         copyto!(shaped.cropped_qpos, qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
         copyto!(shaped.sensor_readings, vcat(_sensor_readings(env)...))
-        shaped.t = env.t
+        shaped.t = env.t * 0.001
         clamp!(shaped.qvel, -10, 10)
     end
 

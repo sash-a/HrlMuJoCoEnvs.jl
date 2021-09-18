@@ -17,16 +17,16 @@ env = HrlMuJoCoEnvs.AntGatherEnv(;viz=true)
 
 # getsim(env).m
 reset!(env)
+HrlMuJoCoEnvs._torso_xy(env)
 
 for i in 1:100
     step!(env)
     o = getobs(env)
-    setaction!(env, zeros(8))
+    setaction!(env, rand(8))
     # @show getreward(env)
-    @show last(o)
     if isdone(env)
         println("done")
     end
 end
 
-visualize(env, controller = (e -> setaction!(e, zeros(8))))
+visualize(env, controller = (e -> setaction!(e, rand(8))))
