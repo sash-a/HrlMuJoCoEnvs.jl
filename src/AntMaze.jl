@@ -1,4 +1,4 @@
-MAZE_DIST_THRESH = 20
+MAZE_DIST_THRESH = 5
 
 mutable struct AntMaze{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     sim::SIM
@@ -22,8 +22,9 @@ mutable struct AntMaze{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
         ospace = MultiShape(
             targetvec=VectorShape(Float64, 2),
             d_old=VectorShape(Float64, 1),
-            cropped_qpos=VectorShape(Float64, sim.m.nq - 2),
-            qvel=VectorShape(Float64, sim.m.nv)
+            qpos=VectorShape(Float64, sim.m.nq),
+            qvel=VectorShape(Float64, sim.m.nv),
+            t=ScalarShape(Float64)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0, 0, 0, rng)
         reset!(env)
@@ -46,7 +47,6 @@ function LyceumMuJoCo.step!(env::AntMaze)
 end
 
 function LyceumMuJoCo.getobs!(obs, env::AntMaze)
-    # TODO sensor readings
     checkaxes(obsspace(env), obs)
     qpos = env.sim.d.qpos
     @views @uviews qpos obs begin
@@ -56,8 +56,10 @@ function LyceumMuJoCo.getobs!(obs, env::AntMaze)
 
         copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
         copyto!(shaped.d_old, [env.d_old / 1000])
-        copyto!(shaped.cropped_qpos, qpos[3:end])
+
+        copyto!(shaped.cropped_qpos, qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
+        shaped.t = env.t * 0.001
         clamp!(shaped.qvel, -10, 10)
     end
 
@@ -103,8 +105,7 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AntMaze)
     end
 end
 
-LyceumMuJoCo.geteval(env::AntMaze) = sqeuclidean(_torso_xy(env), [0, 16]) < MAZE_DIST_THRESH ? 1 : 0
-
+LyceumMuJoCo.geteval(env::AntMaze) = euclidean(_torso_xy(env), [0, 16]) < MAZE_DIST_THRESH ? 1 : 0
 
 @inline _torso_xy(env::AntMaze) = env.sim.d.qpos[1:2]
 @inline _torso_xy(shapedstate::ShapedView, ::AntMaze) = shapedstate.simstate.qpos[1:2]
