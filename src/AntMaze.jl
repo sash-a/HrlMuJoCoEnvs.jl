@@ -57,7 +57,7 @@ function LyceumMuJoCo.getobs!(obs, env::AntMaze)
         copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
         copyto!(shaped.d_old, [env.d_old / 1000])
 
-        copyto!(shaped.cropped_qpos, qpos)
+        copyto!(shaped.qpos, qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
         shaped.t = env.t * 0.001
         clamp!(shaped.qvel, -10, 10)
@@ -72,7 +72,7 @@ function _movetarget!(env::AntMaze)
     weighting = map(a->a/sum(areas), areas)
     xmin, xmax, ymin, ymax = sample(zones, Weights(weighting))
 
-    env.target = [(xmin + xmax) * rand(env.rng) - xmin, (ymin + ymax) * rand(env.rng) - ymin]
+    env.target = [rand(env.rng, Uniform(xmin, xmax)), rand(env.rng, Uniform(ymin, ymax))]
 
     env.start_targ_dist = env.d_old = sqeuclidean(_torso_xy(env), env.target)
     getsim(env).mn[:geom_pos][ngeom=:target_geom] = [env.target..., 0]
