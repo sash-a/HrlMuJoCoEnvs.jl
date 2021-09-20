@@ -19,8 +19,12 @@ using .WorldStructure
 
 include("WalkerBase.jl")
 include("Ant-v2.jl")  # must be included before maze and flagrun
-include("AntMaze.jl")
 include("Flagrun.jl")
+
+include("Maze/MazeBase.jl")
+include("Maze/AntMazeEnv.jl")
+include("Maze/PointMazeEnv.jl")
+
 include("Gather/GatherBase.jl")
 include("Gather/AntGather.jl")
 include("Gather/PointGather.jl")

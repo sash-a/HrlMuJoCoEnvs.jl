@@ -88,16 +88,6 @@ function LyceumMuJoCo.getobs!(obs, env::PointGatherEnv)
         shaped.sensor_readings .= vcat(_sensor_readings(env)...)
     end
     obs
-    # @views @uviews qpos obs begin
-    #     shaped = obsspace(env)(obs)
-
-    #     copyto!(shaped.cropped_qpos, qpos[3:end])
-    #     copyto!(shaped.qvel, env.sim.d.qvel)
-    #     copyto!(shaped.sensor_readings, vcat(_sensor_readings(env)...))
-    #     clamp!(shaped.qvel, -10, 10)
-    # end
-
-    # obs
 end
 
 function LyceumMuJoCo.reset!(env::PointGatherEnv)
