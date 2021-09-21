@@ -17,6 +17,12 @@ using .AssetManager
 include("WorldStructure.jl")
 using .WorldStructure
 
+include("robots/robotbase.jl")
+include("robots/pointmass.jl")
+
+include("envs/envbase.jl")
+include("envs/walkerbase.jl")
+
 include("WalkerBase.jl")
 include("Ant-v2.jl")  # must be included before maze and flagrun
 include("Flagrun.jl")
@@ -28,5 +34,7 @@ include("Maze/PointMazeEnv.jl")
 include("Gather/GatherBase.jl")
 include("Gather/AntGather.jl")
 include("Gather/PointGather.jl")
+
+include("envs/pointgather.jl")
 
 end # module
