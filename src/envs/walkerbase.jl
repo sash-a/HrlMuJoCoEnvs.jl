@@ -1,5 +1,5 @@
-# Assumes all walker envs have last_torso_x (bad practise but not sure how to get around this)
-abstract type AbstractWalker3DMJEnv <: AbstractMuJoCoEnvironment end
+# TODO remove the dependancy on torso_x
+abstract type AbstractWalker3DMJEnv <: AbstractRoboticEnv end
 
 @inline LyceumMuJoCo.getsim(env::AbstractWalker3DMJEnv) = env.sim
 @inline LyceumMuJoCo.statespace(env::AbstractWalker3DMJEnv) = env.statespace
@@ -49,7 +49,7 @@ function _reset!(env::AbstractWalker3DMJEnv)
     env
 end
 
-LyceumMuJoCo.reset!(env::T) where T <: AbstractWalker3DMJEnv = _reset!(env)
+LyceumMuJoCo.reset!(env::AbstractWalker3DMJEnv) = _reset!(env)
 
 function LyceumMuJoCo.randreset!(rng::AbstractRNG, env::AbstractWalker3DMJEnv)
     LyceumMuJoCo.reset_nofwd!(env.sim)

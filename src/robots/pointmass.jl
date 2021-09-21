@@ -1,12 +1,13 @@
-mutable struct PointMass{O} <: AbstractRobot
+mutable struct PointMass{SIM<:MJSim, O} <: AbstractRobot
+    sim::SIM
     obsspace::O
 
-    function PointMass()
+    function PointMass(sim::MJSim)
         ospace = MultiShape(
             agent_pos=VectorShape(Float64, 2),
             agent_vel=VectorShape(Float64, 2),
         )
-        new{typeof(ospace)}(ospace)
+        new{typeof(sim), typeof(ospace)}(sim, ospace)
     end
 end
 
@@ -14,31 +15,30 @@ getfile(::PointMass) = joinpath(AssetManager.dir, "pointmass.xml")
 getfile(::Type{PointMass}) = joinpath(AssetManager.dir, "pointmass.xml")
 
 @inline LyceumMuJoCo.obsspace(rob::PointMass) = rob.obsspace
-function LyceumMuJoCo.getobs!(sim::MJSim, rob::PointMass)
+function LyceumMuJoCo.getobs!(rob::PointMass)
     # checkaxes(obsspace(env), obs)
-    qpos = sim.d.qpos
-    dn = sim.dn
-
+    dn = rob.sim.dn
     obs = allocate(obsspace(rob))
-    
-    @views @uviews qpos obs begin
-        shaped = obsspace(rob)(obs)
-        copyto!(shaped.agent_pos, [dn.xpos[:x, :agent], dn.xpos[:y, :agent]])
-        copyto!(shaped.agent_vel, [dn.qvel[:agent_x], dn.qvel[:agent_y]])
+    shaped = obsspace(rob)(obs)
+
+    @uviews shaped @inbounds begin
+        shaped.agent_pos .= dn.xpos[:x, :agent], dn.xpos[:y, :agent]
+        shaped.agent_vel .= dn.qvel[:agent_x], dn.qvel[:agent_y]
     end
 
     obs
 end
 
-LyceumMuJoCo.isdone(::Any, ::Any, ::Any, ::PointMass) = false
+# not sure if I should leave in state, obs and action args here
+LyceumMuJoCo.isdone(::PointMass) = false
 
 controlcost(::PointMass) = 0
 
-@inline _torso_xy(env::PointMass) = [env.sim.dn.xpos[:x, :agent], env.sim.dn.xpos[:y, :agent]]
+@inline _torso_xy(rob::PointMass) = [rob.sim.dn.xpos[:x, :agent], rob.sim.dn.xpos[:y, :agent]]
 @inline _torso_xy(shapedstate::ShapedView, ::PointMass) = shapedstate.agent_pos
 
 @inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::PointMass) = 0.
-@inline LyceumMuJoCo._torso_height(env::PointMass) = 0.
+@inline LyceumMuJoCo._torso_height(::PointMass) = 0.
 
-@inline LyceumMuJoCo._torso_ang(env::PointMass) = 0.
-@inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::PointMass) = 0.
+@inline LyceumMuJoCo._torso_ang(::PointMass) = 0.
+@inline LyceumMuJoCo._torso_ang(::ShapedView, ::PointMass) = 0.

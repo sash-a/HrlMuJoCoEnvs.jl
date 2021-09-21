@@ -7,6 +7,7 @@ using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
 env = HrlMuJoCoEnvs.PointGatherEnv1()
+obsspace(env).robobs
 # model = getsim(env).mn
 # model[:geom_pos]
 # i = 2

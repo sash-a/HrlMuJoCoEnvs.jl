@@ -1,13 +1,16 @@
 abstract type AbstractRoboticEnv <: AbstractMuJoCoEnvironment end
 
 robot(::AbstractRoboticEnv) = nothing
-@inline LyceumMuJoCo.obsspace(env::AbstractRoboticEnv) = LycemeumMuJoCo.obsspace(robot(env))
-LyceumMuJoCo.getobs!(obs, env::AbstractRoboticEnv) = getobs!(getsim(env), robot(env))
+@inline LyceumMuJoCo.obsspace(env::AbstractRoboticEnv) = obsspace(robot(env))
+LyceumMuJoCo.getobs!(obs, env::AbstractRoboticEnv) = getobs!(robot(env))
 
 
 function LyceumBase.tconstruct(Env::Type{AbstractRoboticEnv}, n::Integer; skip=4)
     Tuple(Env(s) for s in LyceumBase.tconstruct(MJSim, n, getfile(robot(env)), skip=skip))
 end
+
+@inline LyceumMuJoCo._torso_x(env::AbstractRoboticEnv) = first(_torso_xy(robot(env)))
+@inline LyceumMuJoCo._torso_x(shapedstate::ShapedView, env::AbstractRoboticEnv) = first(_torso_xy(shapedstate, robot(env)))
 
 @inline _torso_xy(env::AbstractRoboticEnv) = _torso_xy(robot(env))
 @inline _torso_xy(shapedstate::ShapedView, env::AbstractRoboticEnv) = _torso_xy(shapedstate, robot(env))

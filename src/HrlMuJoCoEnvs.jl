@@ -31,10 +31,10 @@ include("Maze/MazeBase.jl")
 include("Maze/AntMazeEnv.jl")
 include("Maze/PointMazeEnv.jl")
 
-include("Gather/GatherBase.jl")
-include("Gather/AntGather.jl")
-include("Gather/PointGather.jl")
+# include("Gather/GatherBase.jl")
+# include("Gather/AntGather.jl")
+# include("Gather/PointGather.jl")
 
-include("envs/pointgather.jl")
+include("envs/gatherenv.jl")
 
 end # module
