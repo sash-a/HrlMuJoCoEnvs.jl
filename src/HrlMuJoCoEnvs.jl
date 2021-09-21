@@ -19,6 +19,7 @@ using .WorldStructure
 
 include("robots/robotbase.jl")
 include("robots/pointmass.jl")
+include("robots/ant.jl")
 
 include("envs/envbase.jl")
 include("envs/walkerbase.jl")

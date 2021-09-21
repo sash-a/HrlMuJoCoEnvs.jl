@@ -15,7 +15,7 @@ getfile(::PointMass) = joinpath(AssetManager.dir, "pointmass.xml")
 getfile(::Type{PointMass}) = joinpath(AssetManager.dir, "pointmass.xml")
 
 @inline LyceumMuJoCo.obsspace(rob::PointMass) = rob.obsspace
-function LyceumMuJoCo.getobs!(rob::PointMass)
+function LyceumMuJoCo.getobs(rob::PointMass)
     # checkaxes(obsspace(env), obs)
     dn = rob.sim.dn
     obs = allocate(obsspace(rob))
@@ -35,7 +35,7 @@ LyceumMuJoCo.isdone(::PointMass) = false
 controlcost(::PointMass) = 0
 
 @inline _torso_xy(rob::PointMass) = [rob.sim.dn.xpos[:x, :agent], rob.sim.dn.xpos[:y, :agent]]
-@inline _torso_xy(shapedstate::ShapedView, ::PointMass) = shapedstate.agent_pos
+@inline _torso_xy(shapedstate::ShapedView, rob::PointMass) = _torso_xy(rob)
 
 @inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::PointMass) = 0.
 @inline LyceumMuJoCo._torso_height(::PointMass) = 0.

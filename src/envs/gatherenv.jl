@@ -21,7 +21,6 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
     obsspace::O
     last_torso_x::Float64
 
-
     target::Vector{Number}
     t::Int
 
@@ -59,10 +58,10 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
             last_torso_x=ScalarShape(Float64),
             sensor_readings=VectorShape(Float64, nbins * 2)
         )
-        @show typeof(robot) obsspace(robot)
-        ospace = MultiShape(robobs=obsspace(robot), sensor_readings=VectorShape(Float64, nbins * 2))
-        @show ospace
-
+        ospace = MultiShape(
+            robobs=obsspace(robot), 
+            sensor_readings=VectorShape(Float64, nbins * 2)
+        )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, robot, sspace, ospace, 0, [0, 0], 0,            
                                                                 napples,
                                                                 nbombs,
@@ -93,8 +92,11 @@ function LyceumBase.tconstruct(::Type{GatherEnv}, Robot::Type{<:AbstractRobot}, 
 end
 
 PointGatherEnv1(;viz=false) = first(LyceumBase.tconstruct(GatherEnv, PointMass, 1; viz=viz))
+AntGatherEnv1(;viz=false) = first(LyceumBase.tconstruct(GatherEnv, Ant, 1; viz=viz))
 
 collectibles(env::GatherEnv) = merge(env.apples, env.bombs)
+robot(env::GatherEnv) = env.robot
+LyceumMuJoCo.obsspace(env::GatherEnv) = env.obsspace
 
 function _sensor_readings(env::GatherEnv)
     apple_readings = zeros(env.nbins)
@@ -206,8 +208,6 @@ function _move_collectibles!(env::GatherEnv)
     end
 end
 
-LyceumMuJoCo.obsspace(env::GatherEnv) = env.obsspace
-
 function LyceumMuJoCo.getreward(state, action, ::Any, env::GatherEnv)
     checkaxes(statespace(env), state)
     checkaxes(actionspace(env), action)
@@ -215,14 +215,12 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::GatherEnv)
     _collect_collectibles!(env)
 end
 
-robot(env::GatherEnv) = env.robot
-
 function LyceumMuJoCo.getobs!(obs, env::GatherEnv)
     checkaxes(obsspace(env), obs)
 
     shaped = obsspace(env)(obs)
     @uviews shaped @inbounds begin
-        copyto!(shaped.robobs, getobs!(robot(env)))
+        copyto!(shaped.robobs, getobs(robot(env)))
         shaped.sensor_readings .= vcat(_sensor_readings(env)...)
     end
     obs
