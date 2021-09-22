@@ -20,7 +20,7 @@ mutable struct AntEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
     end
 end
 
-function LyceumBase.tconstruct(::Type{::AntEnv}, n::Integer)
+function LyceumBase.tconstruct(::Type{AntEnv}, n::Integer)
     Tuple(AntEnv(s) for s in LyceumBase.tconstruct(LyceumMuJoCo.MJSim, n, getfile(Ant), skip=4))
 end
 

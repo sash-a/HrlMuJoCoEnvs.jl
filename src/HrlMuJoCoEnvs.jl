@@ -14,7 +14,7 @@ using StatsBase
 include("../assets/AssetManager.jl")
 using .AssetManager
 
-include("WorldStructure.jl")
+include("worldstructure.jl")
 using .WorldStructure
 
 include("robots/robotbase.jl")
@@ -24,18 +24,8 @@ include("robots/ant.jl")
 include("envs/envbase.jl")
 include("envs/walkerbase.jl")
 
-include("WalkerBase.jl")
-include("Ant-v2.jl")  # must be included before maze and flagrun
-include("Flagrun.jl")
-
-include("Maze/MazeBase.jl")
-include("Maze/AntMazeEnv.jl")
-include("Maze/PointMazeEnv.jl")
-
-# include("Gather/GatherBase.jl")
-# include("Gather/AntGather.jl")
-# include("Gather/PointGather.jl")
-
+include("envs/antenv.jl")
+include("envs/flagrunenv.jl")
 include("envs/gatherenv.jl")
 include("envs/mazeenv.jl")
 
