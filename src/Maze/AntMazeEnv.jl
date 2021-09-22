@@ -29,15 +29,17 @@ mutable struct AntMazeEnv{SIM<:MJSim, S, O} <: AbstractMazeEnv
     end
 end
 
-function LyceumBase.tconstruct(::Type{AntMazeEnv}, n::Integer; structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing, filename="tmp.xml")
+function LyceumBase.tconstruct(::Type{AntMazeEnv}, n::Integer; structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing)
     antmodelpath = joinpath(AssetManager.dir, "easier_ant.xml")
-    WorldStructure.create_world(antmodelpath, structure=structure, filename=filename)
+    filename="antmazetmp.xml"
+
+    WorldStructure.create_world(antmodelpath, structure=structure, wsize=8, filename=filename)
     modelpath = joinpath(AssetManager.dir, filename)
 
     Tuple(AntMazeEnv(s, structure=structure, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
 end
 
-AntMazeEnv(;structure::Matrix{<: AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing) = first(tconstruct(AntMazeEnv, 1; structure=structure, seed=seed))
+AntMazeEnv(;structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing) = first(tconstruct(AntMazeEnv, 1; structure=structure, seed=seed))
 
 function LyceumMuJoCo.getobs!(obs, env::AntMazeEnv)
     checkaxes(obsspace(env), obs)
@@ -45,11 +47,11 @@ function LyceumMuJoCo.getobs!(obs, env::AntMazeEnv)
     @views @uviews qpos obs begin
         shaped = obsspace(env)(obs)
         targetvec = env.target - _torso_xy(env)
-        angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
+        # angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
+        # copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
 
-        copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
+        copyto!(shaped.targetvec, normalize(targetvec))
         copyto!(shaped.d_old, [env.d_old / 1000])
-
         copyto!(shaped.qpos, qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
         shaped.t = env.t * 0.001
@@ -64,8 +66,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntMazeEnv)
     @uviews state begin
         shapedstate = statespace(env)(state)
         height = LyceumMuJoCo._torso_height(shapedstate, env)
-        done = !(all(isfinite, state) && 0.2 <= height <= 1) || env.d_old < FLAGRUN_DIST_THRESH
-        done
+        !(all(isfinite, state) && 0.2 <= height <= 1)
     end
 end
 

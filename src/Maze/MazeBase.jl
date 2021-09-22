@@ -23,8 +23,8 @@ end
 
 function LyceumMuJoCo.reset!(env::AbstractMazeEnv)
     env.t = 0
-    _movetarget!(env)
     WalkerBase._reset!(env)
+    _movetarget!(env)
 end
 
 function LyceumMuJoCo.getreward(state, action, ::Any, env::AbstractMazeEnv)

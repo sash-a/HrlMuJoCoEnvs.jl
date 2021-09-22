@@ -31,9 +31,9 @@ end
 
 function LyceumBase.tconstruct(::Type{PointMazeEnv}, n::Integer; structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing)
     filename = "pointmazetmp.xml"
-    antmodelpath = joinpath(AssetManager.dir, "pointmass.xml")
+    modelpath = joinpath(AssetManager.dir, "pointmass.xml")
 
-    WorldStructure.create_world(antmodelpath, structure=structure, wsize=8, filename=filename)
+    WorldStructure.create_world(modelpath, structure=structure, wsize=8, filename=filename)
     modelpath = joinpath(AssetManager.dir, filename)
 
     Tuple(PointMazeEnv(s, structure=structure, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
