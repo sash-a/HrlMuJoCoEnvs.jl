@@ -3,7 +3,6 @@ mutable struct PointMazeEnv{SIM<:MJSim, S, O} <: AbstractMazeEnv
     statespace::S
     obsspace::O
     last_torso_x::Float64
-    structure::Matrix{AbstractBlock}
     target::Vector{Number}
     t::Int
     d_old::Float64
@@ -11,7 +10,7 @@ mutable struct PointMazeEnv{SIM<:MJSim, S, O} <: AbstractMazeEnv
     rng::MersenneTwister
 
 
-    function PointMazeEnv(sim::MJSim; structure=WorldStructure.basic_maze_structure, rng=MersenneTwister())
+    function PointMazeEnv(sim::MJSim; rng=MersenneTwister())
         sspace = MultiShape(
             targetvec=VectorShape(Float64, 2),
             simstate=statespace(sim),
@@ -24,7 +23,7 @@ mutable struct PointMazeEnv{SIM<:MJSim, S, O} <: AbstractMazeEnv
             agent_vel=VectorShape(Float64, 2),
             t=ScalarShape(Float64)
         )
-        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0, 0, 0, rng)
+        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, [0, 0], 0, 0, 0, rng)
         reset!(env)
     end
 end
@@ -36,7 +35,7 @@ function LyceumBase.tconstruct(::Type{PointMazeEnv}, n::Integer; structure::Matr
     WorldStructure.create_world(antmodelpath, structure=structure, wsize=8, filename=filename)
     modelpath = joinpath(AssetManager.dir, filename)
 
-    Tuple(PointMazeEnv(s, structure=structure, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
+    Tuple(PointMazeEnv(s; rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
 end
 
 PointMazeEnv(;structure::Matrix{<: AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing) = first(tconstruct(PointMazeEnv, 1; structure=structure, seed=seed))

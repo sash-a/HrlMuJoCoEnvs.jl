@@ -6,7 +6,7 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
-env = HrlMuJoCoEnvs.AntGatherEnv1()
+env = HrlMuJoCoEnvs.PointMazeEnv1()
 obsspace(env).robobs
 # model = getsim(env).mn
 # model[:geom_pos]
@@ -17,14 +17,37 @@ obsspace(env).robobs
 # @show getsim(env).mn[:geom_pos][10:20]
 
 # getsim(env).m
+env1 = HrlMuJoCoEnvs.PointMazeEnv()
 reset!(env)
-HrlMuJoCoEnvs._torso_xy(env)
+reset!(env1)
+@show getobs(env)
+@show getobs(env1)
 
-for i in 1:100
+setaction!(env, zeros(length(actionspace(env))) .+ 1)
+setaction!(env1, zeros(length(actionspace(env1))) .+ 1)
+step!(env)
+step!(env1)
+
+HrlMuJoCoEnvs._torso_xy(env)
+state=LyceumBase.allocate(statespace(env))
+HrlMuJoCoEnvs._torso_xy(statespace(env)(state), env)
+
+
+
+for i in 1:5
     step!(env)
+    step!(env1)
     o = getobs(env)
-    setaction!(env, rand(length(actionspace(env))))
-    # @show getreward(env)
+    o1 = getobs(env1)
+
+    @show o o1
+
+    setaction!(env, zeros(length(actionspace(env))))
+    setaction!(env, zeros(length(actionspace(env1))))
+    
+    @show getreward(env)
+    @show getreward(env1)
+    
     if isdone(env)
         println("done")
     end

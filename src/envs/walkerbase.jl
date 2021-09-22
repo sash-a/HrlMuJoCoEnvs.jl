@@ -45,6 +45,7 @@ function LyceumMuJoCo.geteval(state, ::Any, ::Any, env::AbstractWalker3DMJEnv)
 end
 
 function _reset!(env::AbstractWalker3DMJEnv)
+    reset!(getsim(env))
     env.last_torso_x = LyceumMuJoCo._torso_x(env)
     env
 end
@@ -66,4 +67,4 @@ function _step!(env::AbstractWalker3DMJEnv)
     env
 end
 LyceumMuJoCo.step!(env::AbstractWalker3DMJEnv) = _step!(env)
-LyceumMuJoCo.isdone(::Any, ::Any, ::Any, env::AbstractWalker3DMJEnv) = isdone(robot(env))
+LyceumMuJoCo.isdone(::Any, ::Any, ::Any, env::AbstractWalker3DMJEnv) = isdone(getsim(env), robot(env))

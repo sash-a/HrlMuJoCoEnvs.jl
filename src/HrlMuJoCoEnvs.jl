@@ -37,5 +37,6 @@ include("Maze/PointMazeEnv.jl")
 # include("Gather/PointGather.jl")
 
 include("envs/gatherenv.jl")
+include("envs/mazeenv.jl")
 
 end # module

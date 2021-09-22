@@ -32,7 +32,6 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
     nbins::Int
     sensor_range::Float64
     sensor_span::Float64
-    dying_cost::Float64
 
     apples::Dict{Apple, Int}  # (Apple => it's ID/name in the .xml file)
     bombs::Dict{Bomb, Int}
@@ -43,13 +42,12 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
     function GatherEnv(sim::MJSim, robot;                                                          
                         napples=8,
                         nbombs=8,
-                        activity_range=6.,
+                        activity_range=10.,
                         robot_object_spacing=2.,
-                        catch_range=1.5,
-                        nbins=10,
-                        sensor_range=6.,
+                        catch_range=1,
+                        nbins=8,
+                        sensor_range=8.,
                         sensor_span=2*π,
-                        dying_cost=-10,
                         rng=MersenneTwister(),
                         viz=false)
                     
@@ -60,7 +58,8 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
         )
         ospace = MultiShape(
             robobs=obsspace(robot), 
-            sensor_readings=VectorShape(Float64, nbins * 2)
+            sensor_readings=VectorShape(Float64, nbins * 2),
+            t=ScalarShape(Int)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, robot, sspace, ospace, 0, [0, 0], 0,            
                                                                 napples,
@@ -71,7 +70,6 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
                                                                 nbins,
                                                                 sensor_range,
                                                                 sensor_span,
-                                                                dying_cost,
                                                                 Dict([(Apple(), i) for i in 1:napples]),
                                                                 Dict([(Bomb(), i) for i in 1:nbombs]),
                                                                 rng,
@@ -83,9 +81,9 @@ end
 function LyceumBase.tconstruct(::Type{GatherEnv}, Robot::Type{<:AbstractRobot}, n::Integer; 
                                 structure::Matrix{<:AbstractBlock}=WorldStructure.wall_structure, 
                                 napples::Int=8, nbombs::Int=8, nbins::Int=8, seed=nothing, viz=false)
-    antmodelpath = getfile(Robot)
-    outfile = "pointgathertmp.xml"
-    WorldStructure.create_world(antmodelpath, napples, nbombs, nbins; structure=structure, wsize=6, viz=viz, filename=outfile)
+    modelpath = getfile(Robot)
+    outfile = "gathertmp.xml"
+    WorldStructure.create_world(modelpath, napples, nbombs, nbins; structure=structure, wsize=8, viz=viz, filename=outfile)
     modelpath = joinpath(AssetManager.dir, outfile)
 
     Tuple(GatherEnv(s, Robot(s); napples=napples, nbombs=nbombs, rng=MersenneTwister(seed), viz=viz) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
@@ -208,11 +206,9 @@ function _move_collectibles!(env::GatherEnv)
     end
 end
 
-function LyceumMuJoCo.getreward(state, action, ::Any, env::GatherEnv)
-    checkaxes(statespace(env), state)
-    checkaxes(actionspace(env), action)
-
-    _collect_collectibles!(env)
+function LyceumMuJoCo.step!(env::GatherEnv)
+    env.t += 1
+    _step!(env)
 end
 
 function LyceumMuJoCo.getobs!(obs, env::GatherEnv)
@@ -220,13 +216,22 @@ function LyceumMuJoCo.getobs!(obs, env::GatherEnv)
 
     shaped = obsspace(env)(obs)
     @uviews shaped @inbounds begin
-        copyto!(shaped.robobs, getobs(robot(env)))
+        copyto!(shaped.robobs, getobs(getsim(env), robot(env)))
         shaped.sensor_readings .= vcat(_sensor_readings(env)...)
+        shaped.t = env.t * 0.001
     end
     obs
 end
 
 function LyceumMuJoCo.reset!(env::GatherEnv)
+    env.t = 0
     _move_collectibles!(env)
     _reset!(env)
+end
+
+function LyceumMuJoCo.getreward(state, action, ::Any, env::GatherEnv)
+    checkaxes(statespace(env), state)
+    checkaxes(actionspace(env), action)
+
+    _collect_collectibles!(env)
 end

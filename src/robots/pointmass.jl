@@ -1,13 +1,12 @@
-mutable struct PointMass{SIM<:MJSim, O} <: AbstractRobot
-    sim::SIM
+mutable struct PointMass{O} <: AbstractRobot
     obsspace::O
 
-    function PointMass(sim::MJSim)
+    function PointMass(::MJSim=nothing)  # doesn't need sim but needs to keep consistent with other envs
         ospace = MultiShape(
             agent_pos=VectorShape(Float64, 2),
             agent_vel=VectorShape(Float64, 2),
         )
-        new{typeof(sim), typeof(ospace)}(sim, ospace)
+        new{typeof(ospace)}(ospace)
     end
 end
 
@@ -15,9 +14,9 @@ getfile(::PointMass) = joinpath(AssetManager.dir, "pointmass.xml")
 getfile(::Type{PointMass}) = joinpath(AssetManager.dir, "pointmass.xml")
 
 @inline LyceumMuJoCo.obsspace(rob::PointMass) = rob.obsspace
-function LyceumMuJoCo.getobs(rob::PointMass)
+function LyceumMuJoCo.getobs(sim::MJSim, rob::PointMass)
     # checkaxes(obsspace(env), obs)
-    dn = rob.sim.dn
+    dn = sim.dn
     obs = allocate(obsspace(rob))
     shaped = obsspace(rob)(obs)
 
@@ -30,15 +29,15 @@ function LyceumMuJoCo.getobs(rob::PointMass)
 end
 
 # not sure if I should leave in state, obs and action args here
-LyceumMuJoCo.isdone(::PointMass) = false
+LyceumMuJoCo.isdone(sim::MJSim, ::PointMass) = false
 
 controlcost(::PointMass) = 0
 
-@inline _torso_xy(rob::PointMass) = [rob.sim.dn.xpos[:x, :agent], rob.sim.dn.xpos[:y, :agent]]
-@inline _torso_xy(shapedstate::ShapedView, rob::PointMass) = _torso_xy(rob)
+@inline _torso_xy(sim::MJSim, ::PointMass) = [sim.dn.xpos[:x, :agent], sim.dn.xpos[:y, :agent]]
+@inline _torso_xy(shapedstate::ShapedView, ::PointMass) = @assert false
 
-@inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::PointMass) = 0.
-@inline LyceumMuJoCo._torso_height(::PointMass) = 0.
+@inline LyceumMuJoCo._torso_height(::ShapedView, ::PointMass) = 0.
+@inline LyceumMuJoCo._torso_height(::MJSim, ::PointMass) = 0.
 
-@inline LyceumMuJoCo._torso_ang(::PointMass) = 0.
+@inline LyceumMuJoCo._torso_ang(::MJSim, ::PointMass) = 0.
 @inline LyceumMuJoCo._torso_ang(::ShapedView, ::PointMass) = 0.

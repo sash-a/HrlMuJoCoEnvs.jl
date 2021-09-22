@@ -1,7 +1,5 @@
-mutable struct Ant{SIM <: MJSim,O} <: AbstractRobot
-    sim::SIM
+mutable struct Ant{O} <: AbstractRobot
     obsspace::O
-
     cropqpos::Bool
 
     function Ant(sim::MJSim; cropqpos=false)
@@ -9,7 +7,7 @@ mutable struct Ant{SIM <: MJSim,O} <: AbstractRobot
             qpos=VectorShape(Float64, sim.m.nq - (cropqpos ? 2 : 0)),
             qvel=VectorShape(Float64, sim.m.nv),
         )
-        new{typeof(sim),typeof(ospace)}(sim, ospace, cropqpos)
+        new{typeof(ospace)}(ospace, cropqpos)
     end
 end
 
@@ -17,27 +15,27 @@ getfile(::Type{Ant}) = joinpath(AssetManager.dir, "ant.xml")
 getfile(a::Ant) = getfile(typeof(a))
 
 @inline LyceumMuJoCo.obsspace(rob::Ant) = rob.obsspace
-function LyceumMuJoCo.getobs(rob::Ant)
-    qpos = rob.sim.d.qpos
+function LyceumMuJoCo.getobs(sim::MJSim, rob::Ant)
+    qpos = sim.d.qpos
     obs = allocate(obsspace(rob))
     
     @views @uviews qpos obs begin
         shaped = obsspace(rob)(obs)
         copyto!(shaped.qpos, rob.cropqpos ? qpos[3:end] : qpos)
-        copyto!(shaped.qvel, rob.sim.d.qvel)
+        copyto!(shaped.qvel, sim.d.qvel)
         clamp!(shaped.qvel, -10, 10)
     end
     obs
 end
 
-LyceumMuJoCo.isdone(rob::Ant) = !(0.2 <= LyceumMuJoCo._torso_height(rob) <= 1)
+LyceumMuJoCo.isdone(sim::MJSim, rob::Ant) = !(0.2 <= LyceumMuJoCo._torso_height(sim, rob) <= 1)
 controlcost(::Ant) = 5e-4
 
-@inline _torso_xy(rob::Ant) = rob.sim.d.qpos[1:2]
+@inline _torso_xy(sim::MJSim, rob::Ant) = sim.d.qpos[1:2]
 @inline _torso_xy(shapedstate::ShapedView, ::Ant) = shapedstate.simstate.qpos[1:2]
-@inline LyceumMuJoCo._torso_height(rob::Ant) = rob.sim.d.qpos[3]
+@inline LyceumMuJoCo._torso_height(sim::MJSim, rob::Ant) = sim.d.qpos[3]
 @inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::Ant) = shapedstate.simstate.qpos[3]
-@inline LyceumMuJoCo._torso_ang(env::Ant) = torso_ori(env.sim.d.qpos[ori_ind:ori_ind + 3])
+@inline LyceumMuJoCo._torso_ang(sim::MJSim, env::Ant) = torso_ori(sim.d.qpos[ori_ind:ori_ind + 3])
 @inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::Ant) = torso_ori(shapedstate.simstate.qpos[ori_ind:ori_ind + 3])
 
 const ori_ind = 4

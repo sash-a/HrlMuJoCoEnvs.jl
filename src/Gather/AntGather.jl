@@ -44,7 +44,7 @@ mutable struct AntGatherEnv{SIM<:MJSim, S, O} <: AbstractGatherEnv
             cropped_qpos = VectorShape(Float64, sim.m.nq),
             qvel = VectorShape(Float64, sim.m.nv),
             sensor_readings = VectorShape(Float64, nbins * 2),
-            t=ScalarShape(Int)
+            t=ScalarShape(Float64)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0,            
                                                                 napples,

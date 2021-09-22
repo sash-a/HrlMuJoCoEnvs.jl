@@ -15,7 +15,7 @@ mutable struct AntEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
             cropped_qpos = VectorShape(Float64, sim.m.nq - 2),
             qvel = VectorShape(Float64, sim.m.nv)
         )
-        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, Ant(sim), sspace, ospace, 0, Uniform(-0.1, 0.1))
+        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, Ant(sim; cropqpos=true), sspace, ospace, 0, Uniform(-0.1, 0.1))
         reset!(env)
     end
 end
