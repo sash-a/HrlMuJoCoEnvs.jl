@@ -6,7 +6,7 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
-env = HrlMuJoCoEnvs.AntPushEnv()
+env = HrlMuJoCoEnvs.AntFallEnv()
 # model = getsim(env).mn
 # model[:geom_pos]
 # i = 2

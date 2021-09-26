@@ -21,15 +21,22 @@ include("WalkerBase.jl")
 include("Ant-v2.jl")  # must be included before maze and flagrun
 include("Flagrun.jl")
 
+# Maze
 include("Maze/MazeBase.jl")
 include("Maze/AntMazeEnv.jl")
 include("Maze/PointMazeEnv.jl")
 
+# Gather
 include("Gather/GatherBase.jl")
 include("Gather/AntGather.jl")
 include("Gather/PointGather.jl")
 
+# Push
 include("push/pushbase.jl")
 include("push/antpushenv.jl")
+
+# Fall
+include("fall/fallbase.jl")
+include("fall/antfallenv.jl")
 
 end # module

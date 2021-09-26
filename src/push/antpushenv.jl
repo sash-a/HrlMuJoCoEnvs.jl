@@ -24,6 +24,7 @@ mutable struct AntPushEnv{SIM<:MJSim, S, O} <: AbstractPushEnv
             t=ScalarShape(Float64)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, PUSH_TARGET, 0, 0, 0, rng)
+        getsim(env).mn[:geom_pos][ngeom=:target_geom] = PUSH_TARGET
         reset!(env)
     end
 end

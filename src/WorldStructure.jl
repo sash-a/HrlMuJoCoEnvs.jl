@@ -4,12 +4,15 @@ import ..LightXML
 import ..AssetManager
 export Robot, AbstractBlock, StaticBlock, EmptyBlock, SingleBlock, MoveableBlock, height, ismoveable, basic_maze_structure, isrobot
 
+const MAZE_HEIGHT = 0.5
+
 abstract type AbstractBlock end
 abstract type StaticBlock <: AbstractBlock end
 
 struct Robot <: AbstractBlock end
 struct EmptyBlock <: StaticBlock end
 struct SingleBlock <: StaticBlock end
+struct ChasmBlock <: StaticBlock end
 struct MoveableBlock <: AbstractBlock # TODO SpinnableBlock
     x::Bool
     y::Bool
@@ -17,8 +20,9 @@ struct MoveableBlock <: AbstractBlock # TODO SpinnableBlock
 end
 
 height(::AbstractBlock) = 0
-height(::SingleBlock) = 0.5
-height(::MoveableBlock) = 0.5
+height(::SingleBlock) = MAZE_HEIGHT
+height(::MoveableBlock) = MAZE_HEIGHT
+height(::ChasmBlock) = -MAZE_HEIGHT
 
 isrobot(::AbstractBlock) = false
 isrobot(::Robot) = true
@@ -35,7 +39,9 @@ ismoveable_z(b::MoveableBlock) = b.z
 
 
 const _X = SingleBlock()
-const _M = MoveableBlock(true, true, false) 
+const _M = MoveableBlock(true, true, false)
+const _F = MoveableBlock(false, true, true)
+const _C = ChasmBlock()
 const _O = EmptyBlock()
 const _R = Robot()
 
@@ -56,6 +62,13 @@ const push_maze =  [_X _X _X _X _X;
                     _X _O _M _O _X;
                     _X _X _O _X _X;
                     _X _X _X _X _X]
+
+const fall_maze =  [_X _X _X _X;
+                    _X _R _O _X;
+                    _X _O _F _X;
+                    _X _C _C _X;
+                    _X _O _O _X;
+                    _X _X _X _X]
 
 function create_world(modelpath::String; structure::Matrix{<:AbstractBlock}=WorldStructure.wall_structure, wsize=8, filename="tmp.xml")
     xdoc = LightXML.parse_file(modelpath)
@@ -135,21 +148,49 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
     worldbody = LightXML.find_element(xroot, "worldbody")
 
     heightoffset = 0.  # used for ant fall
+    elevated = any(i -> height(i) == -MAZE_HEIGHT, structure)
+    if elevated  # Increase initial z-pos of ant.
+        heightoffset = MAZE_HEIGHT * wsize
+        for n in LightXML.child_elements(worldbody)
+            if LightXML.attribute(n, "name") == "torso"
+                LightXML.set_attributes(n; pos="0 0 $(0.75 + heightoffset)")
+                break
+            end
+        end
+    end
+    # If there are movable blocks, change simulation settings to perform better contact detection.
+    if any(i -> i isa MoveableBlock,  structure)
+        default = LightXML.find_element(xroot, "default")
+        defaultgeom = LightXML.find_element(default, "geom")
+        LightXML.set_attributes(defaultgeom; solimp=".995 .995 .01")
+    end
 
     for i in 1:size(structure, 1)
         for j in 1:size(structure, 2)
             block = structure[i, j]
+            if elevated && height(block) != -MAZE_HEIGHT
+                # Create elevated platform.
+                geom = LightXML.new_child(worldbody, "geom")
+                LightXML.set_attributes(geom; name="elevated_$(i - 1)_$(j - 1)", 
+                        pos="$((j - 1) * wsize - torso_x) $((i - 1) * wsize - torso_y) $(MAZE_HEIGHT / 2 * wsize)",
+                        size="$(wsize / 2) $(wsize / 2) $(MAZE_HEIGHT / 2 * wsize)",
+                        type="box",
+                        material="",
+                        contype="1",
+                        conaffinity="1",
+                        rgba="0.9 0.9 0.9 1")
+            end
             if height(block) > 0
                 if !ismoveable(block)
                     geom = LightXML.new_child(worldbody, "geom")
                     LightXML.set_attributes(geom; name="block_$(i - 1)_$(j - 1)", 
-                                            pos="$((j - 1) * wsize - torso_x) $((i - 1) * wsize - torso_y) $(height(block) / 2 * wsize)",
-                                            size="$(wsize / 2) $(wsize / 2) $(height(block) / 2 * wsize)",
-                                            type="box",
-                                            material="",
-                                            contype="1",
-                                            conaffinity="1",
-                                            rgba="0.4 0.4 0.4 1")
+                            pos="$((j - 1) * wsize - torso_x) $((i - 1) * wsize - torso_y) $(heightoffset + height(block) / 2 * wsize)",
+                            size="$(wsize / 2) $(wsize / 2) $(height(block) / 2 * wsize)",
+                            type="box",
+                            material="",
+                            contype="1",
+                            conaffinity="1",
+                            rgba="0.4 0.4 0.4 1")
                 else
                     shrink = ismoveable_z(block) ? 0.99 : 1.
 
@@ -162,7 +203,7 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
                     LightXML.set_attributes(geom; 
                         name="block_$(i - 1)_$(j - 1)",
                         pos="0 0 0",
-                        size="$(0.5 * wsize * shrink) $(0.5 * wsize * shrink) $(height(block) / 2 * wsize)",
+                        size="$(wsize / 2 * shrink) $(wsize / 2 * shrink) $(height(block) / 2 * wsize)",
                         type="box",
                         material="",
                         mass=ismoveable_z(block) ? "0.001" : "0.0002",
@@ -171,14 +212,15 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
                         rgba="0.9 0.1 0.1 1"
                     )
 
+                    limited = ismoveable_z(block)
                     if ismoveable_x(block)
-                        _addjoint(body, "movable_x_$(i - 1)_$(j - 1)", wsize, 1, 0, 0)
+                        _addjoint(body, "movable_x_$(i - 1)_$(j - 1)", wsize, limited, 1, 0, 0)
                     end
                     if ismoveable_y(block)
-                        _addjoint(body, "movable_y_$(i - 1)_$(j - 1)", wsize, 0, 1, 0)
+                        _addjoint(body, "movable_y_$(i - 1)_$(j - 1)", wsize, limited, 0, 1, 0)
                     end
                     if ismoveable_z(block)
-                        _addjoint(body, "movable_z_$(i - 1)_$(j - 1)", wsize, 0, 0, 1)
+                        _addjoint(body, "movable_z_$(i - 1)_$(j - 1)", wsize, limited, 0, 0, 1; heightoffset=heightoffset)
                     end
                 end
             end
@@ -187,18 +229,23 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
 
     xdoc
 end
-function _addjoint(body, name, wsize, axis_x, axis_y, axis_z)
+function _addjoint(body, name, wsize, limited, axis_x, axis_y, axis_z; heightoffset=0)
+    range = "$(-wsize) $wsize"
+    if axis_z != 0 && heightoffset != 0
+        range = "$(-heightoffset) 0"
+    end
+
     joint = LightXML.new_child(body, "joint")
     LightXML.set_attributes(joint; 
                             name=name,
                             armature="0",
                             axis="$axis_x $axis_y $axis_z",
                             damping="0.0",
-                            limited=axis_z == 0 ? "false" : "true",
-                            range="$(-wsize) $wsize",
+                            limited=string(limited),
+                            range=range,
                             margin="0.01",
                             pos="0 0 0",
-                            type="slide")
+    type="slide")
 end
 
 function finish_xml(xdoc, outfile::String)
