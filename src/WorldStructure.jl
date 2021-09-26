@@ -35,6 +35,7 @@ ismoveable_z(b::MoveableBlock) = b.z
 
 
 const _X = SingleBlock()
+const _M = MoveableBlock(true, true, false) 
 const _O = EmptyBlock()
 const _R = Robot()
 
@@ -49,6 +50,12 @@ const wall_structure = [_X _X _X _X _X;
                         _X _O _R _O _X;
                         _X _O _O _O _X;
                         _X _X _X _X _X]
+
+const push_maze =  [_X _X _X _X _X;
+                    _X _O _R _X _X;
+                    _X _O _M _O _X;
+                    _X _X _O _X _X;
+                    _X _X _X _X _X]
 
 function create_world(modelpath::String; structure::Matrix{<:AbstractBlock}=WorldStructure.wall_structure, wsize=8, filename="tmp.xml")
     xdoc = LightXML.parse_file(modelpath)
@@ -127,24 +134,71 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
     xroot = LightXML.root(xdoc)
     worldbody = LightXML.find_element(xroot, "worldbody")
 
+    heightoffset = 0.  # used for ant fall
+
     for i in 1:size(structure, 1)
         for j in 1:size(structure, 2)
             block = structure[i, j]
             if height(block) > 0
-                geom = LightXML.new_child(worldbody, "geom")
-                LightXML.set_attributes(geom; name="block_$(i - 1)_$(j - 1)", 
-                                        pos="$((j - 1) * wsize - torso_x) $((i - 1) * wsize - torso_y) $(height(block) / 2 * wsize)",
-                                        size="$(wsize / 2) $(wsize / 2) $(height(block) / 2 * wsize)",
-                                        type="box",
-                                        material="",
-                                        contype="1",
-                                        conaffinity="1",
-                                        rgba="0.4 0.4 0.4 1")
+                if !ismoveable(block)
+                    geom = LightXML.new_child(worldbody, "geom")
+                    LightXML.set_attributes(geom; name="block_$(i - 1)_$(j - 1)", 
+                                            pos="$((j - 1) * wsize - torso_x) $((i - 1) * wsize - torso_y) $(height(block) / 2 * wsize)",
+                                            size="$(wsize / 2) $(wsize / 2) $(height(block) / 2 * wsize)",
+                                            type="box",
+                                            material="",
+                                            contype="1",
+                                            conaffinity="1",
+                                            rgba="0.4 0.4 0.4 1")
+                else
+                    shrink = ismoveable_z(block) ? 0.99 : 1.
+
+                    body = LightXML.new_child(worldbody, "body")
+                    LightXML.set_attributes(body; 
+                        name="moveable_$(i - 1)_$(j - 1)",
+                        pos="$((j - 1) * wsize - torso_x) $((i - 1) * wsize - torso_y) $(heightoffset + height(block) / 2 * wsize)")
+
+                    geom = LightXML.new_child(body, "geom")
+                    LightXML.set_attributes(geom; 
+                        name="block_$(i - 1)_$(j - 1)",
+                        pos="0 0 0",
+                        size="$(0.5 * wsize * shrink) $(0.5 * wsize * shrink) $(height(block) / 2 * wsize)",
+                        type="box",
+                        material="",
+                        mass=ismoveable_z(block) ? "0.001" : "0.0002",
+                        contype="1",
+                        conaffinity="1",
+                        rgba="0.9 0.1 0.1 1"
+                    )
+
+                    if ismoveable_x(block)
+                        _addjoint(body, "movable_x_$(i - 1)_$(j - 1)", wsize, 1, 0, 0)
+                    end
+                    if ismoveable_y(block)
+                        _addjoint(body, "movable_y_$(i - 1)_$(j - 1)", wsize, 0, 1, 0)
+                    end
+                    if ismoveable_z(block)
+                        _addjoint(body, "movable_z_$(i - 1)_$(j - 1)", wsize, 0, 0, 1)
+                    end
+                end
             end
         end
     end
 
     xdoc
+end
+function _addjoint(body, name, wsize, axis_x, axis_y, axis_z)
+    joint = LightXML.new_child(body, "joint")
+    LightXML.set_attributes(joint; 
+                            name=name,
+                            armature="0",
+                            axis="$axis_x $axis_y $axis_z",
+                            damping="0.0",
+                            limited=axis_z == 0 ? "false" : "true",
+                            range="$(-wsize) $wsize",
+                            margin="0.01",
+                            pos="0 0 0",
+                            type="slide")
 end
 
 function finish_xml(xdoc, outfile::String)

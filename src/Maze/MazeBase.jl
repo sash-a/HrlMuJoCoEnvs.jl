@@ -18,7 +18,6 @@ function _movetarget!(env::AbstractMazeEnv)
 
     env.start_targ_dist = env.d_old = euclidean(_torso_xy(env), env.target)
     getsim(env).mn[:geom_pos][ngeom=:target_geom] = [env.target..., 0]
-
 end
 
 function LyceumMuJoCo.reset!(env::AbstractMazeEnv)

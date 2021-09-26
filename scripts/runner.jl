@@ -6,7 +6,7 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
-env = HrlMuJoCoEnvs.PointMazeEnv()
+env = HrlMuJoCoEnvs.AntPushEnv()
 # model = getsim(env).mn
 # model[:geom_pos]
 # i = 2
@@ -18,15 +18,14 @@ env = HrlMuJoCoEnvs.PointMazeEnv()
 # getsim(env).m
 reset!(env)
 HrlMuJoCoEnvs._torso_xy(env)
-
 for i in 1:100
     step!(env)
     o = getobs(env)
-    setaction!(env, rand(2))
+    setaction!(env, rand(8))
     # @show getreward(env)
     if isdone(env)
         println("done")
     end
 end
 
-visualize(env, controller = (e -> setaction!(e, rand(2))))
+visualize(env, controller = (e -> setaction!(e, rand(8))))
