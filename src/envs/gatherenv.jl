@@ -1,6 +1,3 @@
-# Cheating a bit by assuming Gather envs will have certain attributes 
-# TODO make accesor methods for these attributes
-
 abstract type Collectible end
 mutable struct Apple <: Collectible
     pos::Tuple{Float64, Float64}
@@ -19,7 +16,6 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
     robot::AbstractRobot
     statespace::S
     obsspace::O
-    last_torso_x::Float64
 
     target::Vector{Number}
     t::Int
@@ -53,7 +49,6 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
                     
         sspace = MultiShape(
             simstate=statespace(sim),
-            last_torso_x=ScalarShape(Float64),
             sensor_readings=VectorShape(Float64, nbins * 2)
         )
         ospace = MultiShape(
@@ -61,7 +56,7 @@ mutable struct GatherEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
             sensor_readings=VectorShape(Float64, nbins * 2),
             t=ScalarShape(Int)
         )
-        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, robot, sspace, ospace, 0, [0, 0], 0,            
+        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, robot, sspace, ospace, [0, 0], 0,            
                                                                 napples,
                                                                 nbombs,
                                                                 activity_range,
@@ -216,7 +211,7 @@ function LyceumMuJoCo.getobs!(obs, env::GatherEnv)
 
     shaped = obsspace(env)(obs)
     @uviews shaped @inbounds begin
-        copyto!(shaped.robobs, getobs(getsim(env), robot(env)))
+        copyto!(shaped.robobs, getobs!(getsim(env), robot(env), shaped.robobs))
         shaped.sensor_readings .= vcat(_sensor_readings(env)...)
         shaped.t = env.t * 0.001
     end
@@ -235,3 +230,11 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::GatherEnv)
 
     _collect_collectibles!(env)
 end
+
+_set_prev_pos!(env::GatherEnv, pos) = nothing
+_set_prev_pos!(shapedstate, ::GatherEnv, pos) = nothing
+get_prev_pos(env::GatherEnv) = nothing
+get_prev_pos(shapedstate, ::GatherEnv) = nothing
+
+getpos(env::GatherEnv) = _torso_xy(env)
+getpos(shapedstate, env::GatherEnv) = _torso_xy(shapedstate, env)

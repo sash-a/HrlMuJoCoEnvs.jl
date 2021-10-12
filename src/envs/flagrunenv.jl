@@ -5,7 +5,6 @@ mutable struct FlagrunEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
     robot::AbstractRobot
     statespace::S
     obsspace::O
-    last_torso_x::Float64
     randreset_distribution::Uniform{Float64}
     target::Vector{Number}
     evalrew::Float64
@@ -20,7 +19,6 @@ mutable struct FlagrunEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
         sspace = MultiShape(
             targetvec=VectorShape(Float64, 2),
             simstate=statespace(sim),
-            last_torso_x=ScalarShape(Float64)
         )
         ospace = MultiShape(
             targetvec=VectorShape(Float64, 2),
@@ -28,7 +26,7 @@ mutable struct FlagrunEnv{SIM<:MJSim, S, O} <: AbstractWalker3DMJEnv
             robobs=obsspace(robot), 
         )
         env = new{typeof(sim),typeof(sspace),typeof(ospace)}(
-            sim, robot, sspace, ospace, 0, Uniform(-0.1, 0.1), [0, 0], 0f0, 0, interval, 0, 0, true, rng)        
+            sim, robot, sspace, ospace, Uniform(-0.1, 0.1), [0, 0], 0f0, 0, interval, 0, 0, true, rng)        
         reset!(env)
     end
 end
@@ -40,7 +38,7 @@ function LyceumBase.tconstruct(::Type{FlagrunEnv}, Rob::Type{<:AbstractRobot}, n
     modelpath = joinpath(AssetManager.dir, outfile)
 
     WorldStructure.create_world(robmodelpath, structure=structure, filename=outfile)
-    Tuple(FlagrunEnv(s, Rob(), interval=interval, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
+    Tuple(FlagrunEnv(s, Rob(s), interval=interval, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
 end
 
 AntFlagrunEnv(;interval=100, seed=nothing) = first(tconstruct(FlagrunEnv, Ant, 1; interval=interval, seed=seed))
@@ -93,7 +91,7 @@ function LyceumMuJoCo.getobs!(obs, env::FlagrunEnv)
         copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
         # copyto!(shaped.targetvec, normalize(targetvec))
         copyto!(shaped.d_old, [env.d_old / env.targ_start_dist])
-        copyto!(shaped.robobs, getobs(getsim(env), robot(env)))
+        copyto!(shaped.robobs, getobs!(getsim(env), robot(env), shaped.robobs))
     end
 
     obs
@@ -114,13 +112,7 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::FlagrunEnv)
     rew = @uviews state begin
         shapedstate = statespace(env)(state)
         d_new = euclidean(_torso_xy(shapedstate, env), env.target)  # this should possibly go in step!
-        # r = (env.d_old - d_new) / timestep(env)
-        r = 1 - d_new / env.targ_start_dist
-        if d_new < FLAGRUN_DIST_THRESH && env.rew_once
-            r += 1
-            # env.rew_once = false
-            # _movetarget!(env)  # create new target if close to this one
-        end
+        r = 1 - d_new / env.targ_start_dist + (d_new < FLAGRUN_DIST_THRESH ? 1 : 0)
         env.d_old = d_new
         r
     end
@@ -129,3 +121,12 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::FlagrunEnv)
 end
 
 LyceumMuJoCo.geteval(env::FlagrunEnv) = env.evalrew
+
+# TODO maybe torso_x should be specifically included for plain walker envs
+_set_prev_pos!(env::FlagrunEnv, pos) = nothing
+_set_prev_pos!(shapedstate, ::FlagrunEnv, pos) = nothing
+get_prev_pos(env::FlagrunEnv) = nothing
+get_prev_pos(shapedstate, ::FlagrunEnv) = nothing
+
+getpos(env::FlagrunEnv) = _torso_xy(env)
+getpos(shapedstate, env::FlagrunEnv) = _torso_xy(shapedstate, env)

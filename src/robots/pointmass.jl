@@ -14,10 +14,8 @@ getfile(::PointMass) = joinpath(AssetManager.dir, "pointmass.xml")
 getfile(::Type{PointMass}) = joinpath(AssetManager.dir, "pointmass.xml")
 
 @inline LyceumMuJoCo.obsspace(rob::PointMass) = rob.obsspace
-function LyceumMuJoCo.getobs(sim::MJSim, rob::PointMass)
-    # checkaxes(obsspace(env), obs)
+function LyceumMuJoCo.getobs!(sim::MJSim, rob::PointMass, obs)
     dn = sim.dn
-    obs = allocate(obsspace(rob))
     shaped = obsspace(rob)(obs)
 
     @uviews shaped @inbounds begin

@@ -15,9 +15,8 @@ getfile(::Type{Ant}) = joinpath(AssetManager.dir, "ant.xml")
 getfile(a::Ant) = getfile(typeof(a))
 
 @inline LyceumMuJoCo.obsspace(rob::Ant) = rob.obsspace
-function LyceumMuJoCo.getobs(sim::MJSim, rob::Ant)
+function LyceumMuJoCo.getobs!(sim::MJSim, rob::Ant, obs)
     qpos = sim.d.qpos
-    obs = allocate(obsspace(rob))
     
     @views @uviews qpos obs begin
         shaped = obsspace(rob)(obs)
@@ -25,6 +24,7 @@ function LyceumMuJoCo.getobs(sim::MJSim, rob::Ant)
         copyto!(shaped.qvel, sim.d.qvel)
         clamp!(shaped.qvel, -10, 10)
     end
+
     obs
 end
 
@@ -35,7 +35,7 @@ controlcost(::Ant) = 5e-4
 @inline _torso_xy(shapedstate::ShapedView, ::Ant) = shapedstate.simstate.qpos[1:2]
 @inline LyceumMuJoCo._torso_height(sim::MJSim, rob::Ant) = sim.d.qpos[3]
 @inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::Ant) = shapedstate.simstate.qpos[3]
-@inline LyceumMuJoCo._torso_ang(sim::MJSim, env::Ant) = torso_ori(sim.d.qpos[ori_ind:ori_ind + 3])
+@inline LyceumMuJoCo._torso_ang(sim::MJSim, ::Ant) = torso_ori(sim.d.qpos[ori_ind:ori_ind + 3])
 @inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::Ant) = torso_ori(shapedstate.simstate.qpos[ori_ind:ori_ind + 3])
 
 const ori_ind = 4

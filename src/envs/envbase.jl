@@ -2,8 +2,11 @@ abstract type AbstractRoboticEnv <: AbstractMuJoCoEnvironment end
 
 robot(::AbstractRoboticEnv) = nothing
 @inline LyceumMuJoCo.obsspace(env::AbstractRoboticEnv) = obsspace(robot(env))
-LyceumMuJoCo.getobs!(obs, env::AbstractRoboticEnv) = getobs(getsim(env), robot(env))
-
+function LyceumMuJoCo.getobs!(obs, env::AbstractRoboticEnv)
+    # default behaviour just gets robot obs
+    getobs!(getsim(env), robot(env), obs)
+    obs
+end
 
 function LyceumBase.tconstruct(Env::Type{AbstractRoboticEnv}, n::Integer; skip=4)
     Tuple(Env(s) for s in LyceumBase.tconstruct(MJSim, n, getfile(robot(Env)), skip=skip))
