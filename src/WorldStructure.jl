@@ -38,37 +38,44 @@ ismoveable_z(::AbstractBlock) = false
 ismoveable_z(b::MoveableBlock) = b.z
 
 
-const _X = SingleBlock()
+const _B = SingleBlock()
 const _M = MoveableBlock(true, true, false)
+const _X = MoveableBlock(true, false, false)
 const _F = MoveableBlock(false, true, true)
 const _C = ChasmBlock()
-const _O = EmptyBlock()
+const _E = EmptyBlock()
 const _R = Robot()
 
-const basic_maze_structure = [_X _X _X _X _X;
-                              _X _R _O _O _X;
-                              _X _X _X _O _X;
-                              _X _O _O _O _X;
-                              _X _X _X _X _X]
+const basic_maze_structure = [_B _B _B _B _B;
+                              _B _R _E _E _B;
+                              _B _B _B _E _B;
+                              _B _E _E _E _B;
+                              _B _B _B _B _B]
 
-const wall_structure = [_X _X _X _X _X;
-                        _X _O _O _O _X;
-                        _X _O _R _O _X;
-                        _X _O _O _O _X;
-                        _X _X _X _X _X]
+const wall_structure = [_B _B _B _B _B;
+                        _B _E _E _E _B;
+                        _B _E _R _E _B;
+                        _B _E _E _E _B;
+                        _B _B _B _B _B]
 
-const push_maze =  [_X _X _X _X _X;
-                    _X _O _R _X _X;
-                    _X _O _M _O _X;
-                    _X _X _O _X _X;
-                    _X _X _X _X _X]
+const push_maze =  [_B _B _B _B _B;
+                    _B _E _R _B _B;
+                    _B _E _M _E _B;
+                    _B _B _E _B _B;
+                    _B _B _B _B _B]
 
-const fall_maze =  [_X _X _X _X;
-                    _X _R _O _X;
-                    _X _O _F _X;
-                    _X _C _C _X;
-                    _X _O _O _X;
-                    _X _X _X _X]
+const ez_push_maze =  [_B _B _B _B _B;
+                       _B _E _R _B _B;
+                       _B _E _X _E _B;
+                       _B _B _E _B _B;
+                       _B _B _B _B _B]
+
+const fall_maze =  [_B _B _B _B;
+                    _B _R _E _B;
+                    _B _E _F _B;
+                    _B _C _C _B;
+                    _B _E _E _B;
+                    _B _B _B _B]
 
 function create_world(modelpath::String; structure::Matrix{<:AbstractBlock}=WorldStructure.wall_structure, wsize=8, filename="tmp.xml")
     xdoc = LightXML.parse_file(modelpath)
@@ -229,6 +236,7 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
 
     xdoc
 end
+
 function _addjoint(body, name, wsize, limited, axis_x, axis_y, axis_z; heightoffset=0)
     range = "$(-wsize) $wsize"
     if axis_z != 0 && heightoffset != 0

@@ -34,9 +34,31 @@ include("Gather/PointGather.jl")
 # Push
 include("push/pushbase.jl")
 include("push/antpushenv.jl")
+include("push/pointpushenv.jl")
 
 # Fall
 include("fall/fallbase.jl")
 include("fall/antfallenv.jl")
+
+function make(name::String)
+    if "AntMaze" == name
+        AntMazeEnv
+    elseif "PointMaze" == name
+        PointMazeEnv
+    elseif "AntGather" == name
+        AntGatherEnv
+    elseif "PointGather" == name
+        PointGatherEnv
+    elseif "AntPush" == name
+        AntPushEnv
+    elseif "PointPush" == name
+        PointPushEnv
+    elseif "AntFall" == name
+        AntFallEnv
+    else
+        print("Unrecognized environment name")
+        nothing
+    end
+end
 
 end # module

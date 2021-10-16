@@ -29,17 +29,18 @@ mutable struct AntPushEnv{SIM<:MJSim, S, O} <: AbstractPushEnv
     end
 end
 
-function LyceumBase.tconstruct(::Type{AntPushEnv}, n::Integer; seed=nothing)
+function LyceumBase.tconstruct(::Type{AntPushEnv}, n::Integer; easy=false, seed=nothing)
     antmodelpath = joinpath(AssetManager.dir, "easier_ant.xml")
     filename="antpushtmp.xml"
 
-    WorldStructure.create_world(antmodelpath, structure=WorldStructure.push_maze, wsize=8, filename=filename)
+    structure = easy ? WorldStructure.ez_push_maze : WorldStructure.push_maze
+    WorldStructure.create_world(antmodelpath, structure=structure, wsize=8, filename=filename)
     modelpath = joinpath(AssetManager.dir, filename)
 
     Tuple(AntPushEnv(s, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
 end
 
-AntPushEnv(;seed=nothing) = first(tconstruct(AntPushEnv, 1; seed=seed))
+AntPushEnv(;easy=false, seed=nothing) = first(tconstruct(AntPushEnv, 1; easy=easy, seed=seed))
 
 function LyceumMuJoCo.getobs!(obs, env::AntPushEnv)
     checkaxes(obsspace(env), obs)
