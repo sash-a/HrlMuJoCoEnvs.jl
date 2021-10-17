@@ -9,9 +9,10 @@ function LyceumMuJoCo.step!(env::AbstractFallEnv)
 end
 
 function LyceumMuJoCo.reset!(env::AbstractFallEnv)
-    env.start_targ_dist = env.d_old = euclidean(_torso_xyz(env), env.target)
     env.t = 0
-    WalkerBase._reset!(env)
+    r = WalkerBase._reset!(env)
+    env.start_targ_dist = env.d_old = euclidean(_torso_xyz(env), env.target)
+    r
 end
 
 function LyceumMuJoCo.getreward(state, action, ::Any, env::AbstractFallEnv)
