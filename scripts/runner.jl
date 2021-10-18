@@ -6,18 +6,31 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
-env = HrlMuJoCoEnvs.AntFallEnv()
-# model = getsim(env).mn
-# model[:geom_pos]
-# i = 2
-# model[:geom_pos][ngeom=Symbol("apple_$i")] = [1,1,0]
-# model[:geom_pos][ngeom=:apple_2] = [3,2,1]
-# getsim(env).mn[:geom_pos][ngeom=:apple_2]
-# @show getsim(env).mn[:geom_pos][10:20]
+pushenv = HrlMuJoCoEnvs.AntPushEnv(hide_block_joints=true)
+mazeenv = HrlMuJoCoEnvs.AntMazeEnv()
+pushsim = getsim(pushenv)
+mazesim = getsim(mazeenv)
+
+println(getsim(pushenv).d.qpos)
+println(getsim(pushenv).d.qvel)
+
+println(getobs(pushenv)[4:4 + 14])
+println(getobs(pushenv)[19:end - 1])
+
+
+
+println(getsim(mazeenv).d.qpos)
+println(getsim(mazeenv).d.qvel)
 
 # getsim(env).m
-reset!(env)
-HrlMuJoCoEnvs._torso_xy(env)
+reset!(pushenv)
+setaction!(pushenv, zeros(8))
+step!(pushenv)
+
+reset!(mazeenv)
+setaction!(mazeenv, zeros(8))
+step!(mazeenv)
+
 for i in 1:100
     step!(env)
     o = getobs(env)
