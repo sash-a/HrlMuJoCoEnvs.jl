@@ -11,12 +11,13 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
     evalrew::Float64
     t::Int
     interval::Int
+    cropqpos::Bool
     d_old::Float64
     targ_start_dist::Float64
     rew_once::Bool
     rng::MersenneTwister
 
-    function Flagrun(sim::MJSim; structure=WorldStructure.wall_structure, interval=100, rng=MersenneTwister())
+    function Flagrun(sim::MJSim; structure=WorldStructure.wall_structure, interval=25, cropqpos=true, rng=MersenneTwister())
         sspace = MultiShape(
             targetvec=VectorShape(Float64, 2),
             simstate=statespace(sim),
@@ -25,24 +26,26 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
         ospace = MultiShape(
             targetvec=VectorShape(Float64, 2),
             d_old=VectorShape(Float64, 1),
-            cropped_qpos=VectorShape(Float64, sim.m.nq - 2),
+            cropped_qpos=VectorShape(Float64, sim.m.nq - (cropqpos ? 2 : 0)),
             qvel=VectorShape(Float64, sim.m.nv)
         )
         env = new{typeof(sim),typeof(sspace),typeof(ospace)}(
-            sim, sspace, ospace, 0, Uniform(-0.1, 0.1), structure, [0, 0], 0f0, 0, interval, 0, 0, true, rng)
+            sim, sspace, ospace, 0, Uniform(-0.1, 0.1), structure, 
+            [0, 0], 0f0, 0, interval, cropqpos, 0, 0, true, rng
+        )
         reset!(env)
     end
 end
 
-function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=100, seed=nothing, outfile="tmp.xml")
+function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=100, cropqpos=true, seed=nothing, outfile="tmp.xml")
     antmodelpath = joinpath(AssetManager.dir, assetfile)
     WorldStructure.create_world(antmodelpath, structure=WorldStructure.wall_structure, filename=outfile)
     modelpath = joinpath(AssetManager.dir, outfile)
 
-    Tuple(Flagrun(s, structure=WorldStructure.wall_structure, interval=interval, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
+    Tuple(Flagrun(s, structure=WorldStructure.wall_structure, interval=interval, cropqpos=cropqpos, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
 end
 
-AntFlagrun(;interval=100, seed=nothing) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, seed=seed))
+AntFlagrun(;interval=25, cropqpos=true, seed=nothing) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, cropqpos=cropqpos, seed=seed))
 
 function LyceumMuJoCo.step!(env::Flagrun)
     env.evalrew -= env.d_old
@@ -67,7 +70,7 @@ function LyceumMuJoCo.getobs!(obs, env::Flagrun)
         copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
         # copyto!(shaped.targetvec, normalize(targetvec))
         copyto!(shaped.d_old, [env.d_old / env.targ_start_dist])
-        copyto!(shaped.cropped_qpos, qpos[3:end])
+        copyto!(shaped.cropped_qpos, qpos[(env.cropqpos ? 3 : 1):end])
         copyto!(shaped.qvel, env.sim.d.qvel)
         clamp!(shaped.qvel, -10, 10)
     end
@@ -77,14 +80,11 @@ end
 
 function _movetarget!(env::Flagrun, pos::Vector{T}) where T
     offset = rand(env.rng, Uniform(-1, 1), 2)
-    targ = offset * 5 + pos
+    targ = offset * 4 + pos
     
-    # targ = [20 * rand(env.rng) - 10, 20 * rand(env.rng) - 10]
     while euclidean(pos, targ) < FLAGRUN_DIST_THRESH
-        # targ = [20 * rand(env.rng) - 10, 20 * rand(env.rng) - 10]
-
         offset = rand(env.rng, Uniform(-1, 1), 2)
-        targ = offset * 5 + pos
+        targ = offset * 4 + pos
     end
 
     # bit of a hack: moving the extra geom in the xml to indicate target position
@@ -112,7 +112,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::Flagrun)
     @uviews state begin
         shapedstate = statespace(env)(state)
         height = LyceumMuJoCo._torso_height(shapedstate, env)
-        done = !(all(isfinite, state) && 0.38 <= height <= 1)
+        done = !(all(isfinite, state) && 0.2 <= height <= 1)
         done
     end
 end
@@ -123,18 +123,11 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::Flagrun)
     rew = @uviews state begin
         shapedstate = statespace(env)(state)
         d_new = euclidean(_torso_xy(shapedstate, env), env.target)  # this should possibly go in step!
-        # r = (env.d_old - d_new) / timestep(env)
-        r = 1 - d_new / env.targ_start_dist
-        if d_new < FLAGRUN_DIST_THRESH && env.rew_once
-            r += 1
-            # env.rew_once = false
-            # _movetarget!(env)  # create new target if close to this one
-        end
+        r = 1 - d_new / env.targ_start_dist + (d_new < FLAGRUN_DIST_THRESH ? 1 : 0)
         env.d_old = d_new
         r
     end
     rew
-    # LyceumMuJoCo.isdone(env) ? -100000 : rew  # penalizing for dying
 end
 
 LyceumMuJoCo.geteval(env::Flagrun) = env.evalrew

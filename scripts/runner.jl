@@ -6,6 +6,11 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
+env = HrlMuJoCoEnvs.AntMazeEnv()
+getsim(env).m.nq
+getsim(env).m.nv
+
+
 pushenv = HrlMuJoCoEnvs.AntPushEnv(hide_block_joints=true)
 mazeenv = HrlMuJoCoEnvs.AntMazeEnv()
 pushsim = getsim(pushenv)
