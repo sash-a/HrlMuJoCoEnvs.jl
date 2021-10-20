@@ -37,15 +37,15 @@ mutable struct Flagrun{SIM <: MJSim,S,O} <: WalkerBase.AbstractWalkerMJEnv
     end
 end
 
-function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=100, cropqpos=true, seed=nothing, outfile="tmp.xml")
+function LyceumBase.tconstruct(::Type{Flagrun}, assetfile::String, n::Integer; interval=25, cropqpos=true, seed=nothing, outfile="antflagruntmp.xml")
     antmodelpath = joinpath(AssetManager.dir, assetfile)
     WorldStructure.create_world(antmodelpath, structure=WorldStructure.wall_structure, filename=outfile)
     modelpath = joinpath(AssetManager.dir, outfile)
 
-    Tuple(Flagrun(s, structure=WorldStructure.wall_structure, interval=interval, cropqpos=cropqpos, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=4))
+    Tuple(Flagrun(s; structure=WorldStructure.wall_structure, interval=interval, cropqpos=cropqpos, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
 end
 
-AntFlagrun(;interval=25, cropqpos=true, seed=nothing) = first(tconstruct(Flagrun, "ant.xml", 1; interval=interval, cropqpos=cropqpos, seed=seed))
+AntFlagrun(;interval=25, cropqpos=true, seed=nothing) = first(tconstruct(Flagrun, "easier_ant.xml", 1; interval=interval, cropqpos=cropqpos, seed=seed))
 
 function LyceumMuJoCo.step!(env::Flagrun)
     env.evalrew -= env.d_old
