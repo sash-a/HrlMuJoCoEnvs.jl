@@ -39,6 +39,8 @@ include("push/pointpushenv.jl")
 # Fall
 include("fall/fallbase.jl")
 include("fall/antfallenv.jl")
+include("fall/pointfallenv.jl")
+
 
 function make(name::String)
     if "AntMaze" == name
@@ -54,6 +56,8 @@ function make(name::String)
     elseif "PointPush" == name
         PointPushEnv
     elseif "AntFall" == name
+        AntFallEnv
+    elseif "PointFall" == name
         AntFallEnv
     else
         print("Unrecognized environment name")

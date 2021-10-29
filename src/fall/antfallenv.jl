@@ -17,7 +17,7 @@ mutable struct AntFallEnv{SIM<:MJSim, S, O} <: AbstractFallEnv
             last_torso_x=ScalarShape(Float64)
         )
         ospace = MultiShape(
-            targetvec=VectorShape(Float64, 3),
+            targetvec=VectorShape(Float64, 2),
             d_old=VectorShape(Float64, 1),
             qpos=VectorShape(Float64, sim.m.nq),
             qvel=VectorShape(Float64, sim.m.nv),
@@ -46,7 +46,7 @@ function LyceumMuJoCo.getobs!(obs, env::AntFallEnv)
     qpos = env.sim.d.qpos
     @views @uviews qpos obs begin
         shaped = obsspace(env)(obs)
-        targetvec = env.target - _torso_xyz(env)
+        targetvec = env.target - _torso_xyz(env)[1:2]
         # angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
         # copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
 

@@ -77,6 +77,13 @@ const fall_maze =  [_B _B _B _B;
                     _B _E _E _B;
                     _B _B _B _B]
 
+const ez_fall_maze =   [_B _B _B _B;
+                        _B _E _R _B;
+                        _B _E _F _B;
+                        _B _C _C _B;
+                        _B _E _E _B;
+                        _B _B _B _B]
+
 function create_world(modelpath::String; structure::Matrix{<:AbstractBlock}=WorldStructure.wall_structure, wsize=8, filename="tmp.xml")
     xdoc = LightXML.parse_file(modelpath)
     xdoc = _create_maze(xdoc, structure, wsize)
@@ -159,7 +166,8 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
     if elevated  # Increase initial z-pos of ant.
         heightoffset = MAZE_HEIGHT * wsize
         for n in LightXML.child_elements(worldbody)
-            if LightXML.attribute(n, "name") == "torso"
+            # torso for ant, agent for point
+            if LightXML.attribute(n, "name") == "torso" || LightXML.attribute(n, "name") == "agent"
                 LightXML.set_attributes(n; pos="0 0 $(0.75 + heightoffset)")
                 break
             end
@@ -216,7 +224,8 @@ function _create_maze(xdoc, structure::Matrix{<:AbstractBlock}, wsize)
                         mass=ismoveable_z(block) ? "0.001" : "0.0002",
                         contype="1",
                         conaffinity="1",
-                        rgba="0.9 0.1 0.1 1"
+                        rgba="0.9 0.1 0.1 1",
+                        friction="0 0 0"
                     )
 
                     limited = ismoveable_z(block)
