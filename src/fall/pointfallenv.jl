@@ -47,10 +47,10 @@ function LyceumMuJoCo.getobs!(obs, env::PointFallEnv)
     dn = env.sim.dn
     shaped = obsspace(env)(obs)
     @uviews shaped @inbounds begin
-        targetvec = env.target - _torso_xyz(env)[1:2]
+        targetvec = env.target - _torso_xyz(env)
         # angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
         # copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
-        copyto!(shaped.targetvec, normalize(targetvec))
+        copyto!(shaped.targetvec, normalize(targetvec[1:2]))
         copyto!(shaped.d_old, [env.d_old / 1000])
 
         shaped.agent_pos .= dn.xpos[:x, :agent], dn.xpos[:y, :agent], dn.xpos[:z, :agent]

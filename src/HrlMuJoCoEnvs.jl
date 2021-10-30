@@ -58,7 +58,7 @@ function make(name::String)
     elseif "AntFall" == name
         AntFallEnv
     elseif "PointFall" == name
-        AntFallEnv
+        PointFallEnv
     else
         print("Unrecognized environment name")
         nothing

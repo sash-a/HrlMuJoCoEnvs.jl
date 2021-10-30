@@ -46,11 +46,11 @@ function LyceumMuJoCo.getobs!(obs, env::AntFallEnv)
     qpos = env.sim.d.qpos
     @views @uviews qpos obs begin
         shaped = obsspace(env)(obs)
-        targetvec = env.target - _torso_xyz(env)[1:2]
+        targetvec = env.target - _torso_xyz(env)
         # angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
         # copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
 
-        copyto!(shaped.targetvec, normalize(targetvec))
+        copyto!(shaped.targetvec, normalize(targetvec[1:2]))
         copyto!(shaped.d_old, [env.d_old / 1000])
         copyto!(shaped.qpos, qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
