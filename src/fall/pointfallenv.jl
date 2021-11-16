@@ -33,7 +33,7 @@ function LyceumBase.tconstruct(::Type{PointFallEnv}, n::Integer; seed=nothing)
     antmodelpath = joinpath(AssetManager.dir, "pointmass_xyz.xml")
     filename="pointfalltmp.xml"
 
-    WorldStructure.create_world(antmodelpath, structure=WorldStructure.fall_maze, wsize=8, filename=filename)
+    WorldStructure.create_world(antmodelpath, structure=WorldStructure.ez_fall_maze, wsize=8, filename=filename)
     modelpath = joinpath(AssetManager.dir, filename)
 
     Tuple(PointFallEnv(s, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))

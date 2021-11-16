@@ -18,7 +18,7 @@ include("WorldStructure.jl")
 using .WorldStructure
 
 include("WalkerBase.jl")
-include("Ant-v2.jl")  # must be included before maze and flagrun
+include("Ant.jl")  # must be included before maze and flagrun
 include("Flagrun.jl")
 
 # Maze

@@ -11,7 +11,7 @@ env = HrlMuJoCoEnvs.PointFallEnv()
 for i in 1:100
     step!(env)
     o = getobs(env)
-    setaction!(env, rand(8))
+    setaction!(env, rand(2))
     # @show getreward(env)
     if isdone(env)
         println("done")

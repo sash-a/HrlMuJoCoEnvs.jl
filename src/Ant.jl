@@ -1,11 +1,11 @@
-mutable struct AntV2{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
+mutable struct Ant{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     sim::SIM
     statespace::S
     obsspace::O
     last_torso_x::Float64
     randreset_distribution::Uniform{Float64}
 
-    function AntV2(sim::MJSim)
+    function Ant(sim::MJSim)
         sspace = MultiShape(
             simstate=statespace(sim),
             last_torso_x=ScalarShape(Float64)
@@ -19,9 +19,10 @@ mutable struct AntV2{SIM<:MJSim, S, O} <: WalkerBase.AbstractWalkerMJEnv
     end
 end
 
-AntV2() = first(tconstruct(AntV2, 1, joinpath(AssetManager.dir, "easier_ant.xml")))
+AntV3() = first(tconstruct(Ant, 1, joinpath(AssetManager.dir, "ant.xml")))
+AntV1() = first(tconstruct(Ant, 1, joinpath(AssetManager.dir, "easier_ant_geared.xml"), skip=5))
 
-function LyceumMuJoCo.getobs!(obs, env::AntV2)
+function LyceumMuJoCo.getobs!(obs, env::Ant)
     checkaxes(obsspace(env), obs)
     qpos = env.sim.d.qpos
     @views @uviews qpos obs begin
@@ -33,7 +34,7 @@ function LyceumMuJoCo.getobs!(obs, env::AntV2)
     obs
 end
 
-function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntV2)
+function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::Ant)
     checkaxes(statespace(env), state)
     @uviews state begin
         shapedstate = statespace(env)(state)
@@ -43,7 +44,7 @@ function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntV2)
     end
 end
 
-function LyceumMuJoCo.getreward(state, action, ::Any, env::AntV2) 
+function LyceumMuJoCo.getreward(state, action, ::Any, env::Ant) 
     checkaxes(statespace(env), state)
     checkaxes(actionspace(env), action)
     @uviews state begin
@@ -56,8 +57,10 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AntV2)
     end
 end
 
-@inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::AntV2) = shapedstate.simstate.qpos[3]
-@inline LyceumMuJoCo._torso_height(env::AntV2) = env.sim.d.qpos[3]
+@inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::Ant) = shapedstate.simstate.qpos[3]
+@inline LyceumMuJoCo._torso_height(env::Ant) = env.sim.d.qpos[3]
+@inline _torso_xy(env::Ant) = env.sim.d.qpos[1:2]
+
 
 const ori_ind = 4
 @inline function torso_ori(rot::Vector{Float64})
@@ -76,5 +79,5 @@ end
     
     [w, i, j, k]
 end
-@inline LyceumMuJoCo._torso_ang(env::AntV2) = torso_ori(env.sim.d.qpos[ori_ind:ori_ind + 3])
-@inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::AntV2) = torso_ori(shapedstate.simstate.qpos[ori_ind:ori_ind + 3])
+@inline LyceumMuJoCo._torso_ang(env::Ant) = torso_ori(env.sim.d.qpos[ori_ind:ori_ind + 3])
+@inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::Ant) = torso_ori(shapedstate.simstate.qpos[ori_ind:ori_ind + 3])
