@@ -25,4 +25,6 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AbstractPushEnv)
     end
 end
 
+LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AbstractPushEnv) = false
+
 LyceumMuJoCo.geteval(env::AbstractPushEnv) = euclidean(_torso_xy(env), PUSH_TARGET) < PUSH_DIST_THRESH ? 1 : 0

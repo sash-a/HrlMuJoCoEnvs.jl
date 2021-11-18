@@ -37,4 +37,6 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AbstractMazeEnv)
     end
 end
 
+LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AbstractMazeEnv) = false
+
 LyceumMuJoCo.geteval(env::AbstractMazeEnv) = euclidean(_torso_xy(env), [0, 16]) < MAZE_DIST_THRESH ? 1 : 0

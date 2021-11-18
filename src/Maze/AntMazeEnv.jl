@@ -61,14 +61,14 @@ function LyceumMuJoCo.getobs!(obs, env::AntMazeEnv)
     obs
 end
 
-function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntMazeEnv)
-    checkaxes(statespace(env), state)
-    @uviews state begin
-        shapedstate = statespace(env)(state)
-        height = LyceumMuJoCo._torso_height(shapedstate, env)
-        !(all(isfinite, state) && 0.2 <= height <= 1)
-    end
-end
+# function LyceumMuJoCo.isdone(state, ::Any, ::Any, env::AntMazeEnv)
+#     checkaxes(statespace(env), state)
+#     @uviews state begin
+#         shapedstate = statespace(env)(state)
+#         height = LyceumMuJoCo._torso_height(shapedstate, env)
+#         !(all(isfinite, state) && 0.2 <= height <= 1)
+#     end
+# end
 
 @inline _torso_xy(env::AntMazeEnv) = env.sim.d.qpos[1:2]
 @inline _torso_xy(shapedstate::ShapedView, ::AntMazeEnv) = shapedstate.simstate.qpos[1:2]
