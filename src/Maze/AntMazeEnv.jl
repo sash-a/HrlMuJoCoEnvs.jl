@@ -29,8 +29,8 @@ mutable struct AntMazeEnv{SIM<:MJSim, S, O} <: AbstractMazeEnv
     end
 end
 
-function LyceumBase.tconstruct(::Type{AntMazeEnv}, n::Integer; structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing)
-    antmodelpath = joinpath(AssetManager.dir, "easier_ant.xml")
+function LyceumBase.tconstruct(::Type{AntMazeEnv}, n::Integer; structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, 
+                                antmodelpath=joinpath(AssetManager.dir, "easier_ant.xml"), seed=nothing)
     filename="antmazetmp.xml"
 
     WorldStructure.create_world(antmodelpath, structure=structure, wsize=8, filename=filename)
