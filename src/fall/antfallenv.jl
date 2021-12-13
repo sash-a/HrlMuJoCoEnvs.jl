@@ -17,14 +17,15 @@ mutable struct AntFallEnv{SIM<:MJSim, S, O} <: AbstractFallEnv
             last_torso_x=ScalarShape(Float64)
         )
         ospace = MultiShape(
-            targetvec=VectorShape(Float64, 2),
-            d_old=VectorShape(Float64, 1),
+            # targetvec=VectorShape(Float64, 2),
+            # d_old=VectorShape(Float64, 1),
             qpos=VectorShape(Float64, sim.m.nq),
             qvel=VectorShape(Float64, sim.m.nv),
-            t=ScalarShape(Float64)
+            t=ScalarShape(Float64),
+            target=VectorShape(Float64, 2)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, FALL_TARGET, 0, 0, 0, rng)
-        getsim(env).mn[:geom_pos][ngeom=:target_geom] = FALL_TARGET
+        getsim(env).mn[:geom_pos][:,Val(:goal)] = FALL_TARGET
         reset!(env)
     end
 end
@@ -43,19 +44,20 @@ AntFallEnv(;seed=nothing) = first(tconstruct(AntFallEnv, 1; seed=seed))
 
 function LyceumMuJoCo.getobs!(obs, env::AntFallEnv)
     checkaxes(obsspace(env), obs)
-    qpos = env.sim.d.qpos
-    @views @uviews qpos obs begin
+    @views begin
         shaped = obsspace(env)(obs)
-        targetvec = env.target - _torso_xyz(env)
+        # targetvec = env.target - _torso_xyz(env)
         # angle_to_target = atan(targetvec[2], targetvec[1]) - LyceumMuJoCo._torso_ang(env)
         # copyto!(shaped.targetvec, [sin(angle_to_target), cos(angle_to_target)])
 
-        copyto!(shaped.targetvec, normalize(targetvec[1:2]))
-        copyto!(shaped.d_old, [env.d_old / 1000])
-        copyto!(shaped.qpos, qpos)
+        # copyto!(shaped.targetvec, normalize(targetvec[1:2]))
+        # copyto!(shaped.d_old, [env.d_old / 1000])
+        
+        copyto!(shaped.qpos, env.sim.d.qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
-        shaped.t = env.t * 0.001
         clamp!(shaped.qvel, -10, 10)
+        shaped.t = env.t * 0.001
+        copyto!(shaped.target, env.target)
     end
 
     obs

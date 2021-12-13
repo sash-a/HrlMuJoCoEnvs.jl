@@ -1,7 +1,7 @@
 abstract type AbstractFallEnv <: WalkerBase.AbstractWalkerMJEnv end
 
-FALL_DIST_THRESH = 5
-FALL_TARGET  = [0, 27, 4.5]
+const FALL_DIST_THRESH = 5
+const FALL_TARGET  = [0, 27, 4.5]
 
 function LyceumMuJoCo.step!(env::AbstractFallEnv)
     env.t += 1
@@ -21,7 +21,8 @@ function LyceumMuJoCo.getreward(state, action, ::Any, env::AbstractFallEnv)
     @uviews state begin
         shapedstate = statespace(env)(state)
         env.d_old = euclidean(_torso_xyz(env), env.target)
-        1 - (env.d_old / env.start_targ_dist) + (env.d_old < FALL_DIST_THRESH ? 2 : 0)
+        # 1 - (env.d_old / env.start_targ_dist) + (env.d_old < FALL_DIST_THRESH ? 2 : 0)
+        -env.d_old
     end
 end
 

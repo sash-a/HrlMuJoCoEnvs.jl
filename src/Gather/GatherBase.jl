@@ -31,8 +31,8 @@ function _sensor_readings(env::AbstractGatherEnv)
 
     if env.viz
         for i in 1:env.nbins
-            getsim(env).mn[:geom_pos][ngeom=Symbol("apple_sensor_$i")] = [0, 0, -2]
-            getsim(env).mn[:geom_pos][ngeom=Symbol("bomb_sensor_$i")] = [0, 0, -2]
+            getsim(env).mn[:geom_pos][:, Val(Symbol("apple_sensor_$i"))] = [0, 0, -2]
+            getsim(env).mn[:geom_pos][:, Val(Symbol("bomb_sensor_$i"))] = [0, 0, -2]
         end
     end
 
@@ -62,12 +62,12 @@ function _sensor_readings(env::AbstractGatherEnv)
         if c isa Apple
             apple_readings[bin_number] = intensity
             if env.viz
-                getsim(env).mn[:geom_pos][ngeom=Symbol("apple_sensor_$bin_number")] = [cx, cy, 2]
+                getsim(env).mn[:geom_pos][:, Val(Symbol("apple_sensor_$bin_number"))] = [cx, cy, 2]
             end
         else
             bomb_readings[bin_number] = intensity
             if env.viz
-                getsim(env).mn[:geom_pos][ngeom=Symbol("bomb_sensor_$bin_number")] = [cx, cy, 2]
+                getsim(env).mn[:geom_pos][:, Val(Symbol("bomb_sensor_$bin_number"))] = [cx, cy, 2]
             end
         end
     end
@@ -86,7 +86,7 @@ function _collect_collectibles!(env::AbstractGatherEnv)
 
             if env.viz
                 id = c isa Apple ? "apple_$i" : "bomb_$i"
-                getsim(env).mn[:geom_pos][ngeom=Symbol(id)] = [0, 0, -10]
+                getsim(env).mn[:geom_pos][:, Val(Symbol(id))] = [0, 0, -10]
             end
         end
     end
@@ -110,7 +110,7 @@ function _move_collectibles!(env::AbstractGatherEnv)
 
         env.apples[Apple((x, y))] = i
         if env.viz
-            getsim(env).mn[:geom_pos][ngeom=Symbol("apple_$i")] = [x, y, 0]
+            getsim(env).mn[:geom_pos][:, Val(Symbol("apple_$i"))] = [x, y, 0]
         end
     end
 
@@ -123,7 +123,7 @@ function _move_collectibles!(env::AbstractGatherEnv)
 
         env.bombs[Bomb((x, y))] = i
         if env.viz
-            getsim(env).mn[:geom_pos][ngeom=Symbol("bomb_$i")] = [x, y, 0]
+            getsim(env).mn[:geom_pos][:, Val(Symbol("bomb_$i"))] = [x, y, 0]
         end
     end
 end

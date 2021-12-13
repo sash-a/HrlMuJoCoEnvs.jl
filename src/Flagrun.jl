@@ -88,7 +88,7 @@ function _movetarget!(env::Flagrun, pos::Vector{T}) where T
     end
 
     # bit of a hack: moving the extra geom in the xml to indicate target position
-    getsim(env).mn[:geom_pos][ngeom=:target_geom] = [targ..., 0]
+    getsim(env).mn[:geom_pos][:, Val(:target_geom)] = [targ..., 0]
     env.target = targ
     env.d_old = euclidean(pos, env.target)
     env.targ_start_dist = env.d_old

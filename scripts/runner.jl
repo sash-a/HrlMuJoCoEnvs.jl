@@ -6,12 +6,21 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 mj_activate("/home/sasha/.mujoco/mjkey.txt")
 
-env = HrlMuJoCoEnvs.PointFallEnv()
+env = HrlMuJoCoEnvs.AntMazeEnv()
 
-for i in 1:100
+# getsim(env).mn
+# typeof(getsim(env).mn)
+
+# getsim(env).
+
+# cm = getsim(env).mn[:geom_pos]
+# cm[:,:goal]
+
+reset!(env)
+for i in 1:10000
+    setaction!(env, rand(8))
     step!(env)
     o = getobs(env)
-    setaction!(env, rand(2))
     # @show getreward(env)
     if isdone(env)
         println("done")

@@ -83,11 +83,10 @@ end
 
 function LyceumMuJoCo.getobs!(obs, env::AntGatherEnv)
     checkaxes(obsspace(env), obs)
-    qpos = env.sim.d.qpos
-    @views @uviews qpos obs begin
+    @views begin
         shaped = obsspace(env)(obs)
 
-        copyto!(shaped.cropped_qpos, qpos)
+        copyto!(shaped.cropped_qpos, env.sim.d.qpos)
         copyto!(shaped.qvel, env.sim.d.qvel)
         copyto!(shaped.sensor_readings, vcat(_sensor_readings(env)...))
         shaped.t = env.t * 0.001

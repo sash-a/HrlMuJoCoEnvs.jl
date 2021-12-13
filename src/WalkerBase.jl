@@ -100,10 +100,4 @@ LyceumMuJoCo.isdone(state, ::Any, ::Any, env::T) where T <: AbstractWalkerMJEnv 
 @inline LyceumMuJoCo._torso_x(shapedstate::ShapedView, ::T) where T <: AbstractWalkerMJEnv = shapedstate.simstate.qpos[1]
 @inline LyceumMuJoCo._torso_x(env::T) where T <: AbstractWalkerMJEnv = env.sim.d.qpos[1]
 
-# @inline _torso_xy(shapedstate::ShapedView, ::AbstractWalkerMJEnv) = shapedstate.simstate.qpos[1:2]
-# @inline _torso_xy(env::AbstractWalkerMJEnv) = env.sim.d.qpos[1:2]
-
-# @inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::AbstractWalkerMJEnv) = shapedstate.simstate.qpos[3]
-# # TODO get the quat and project on xy
-# @inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::AbstractWalkerMJEnv) = shapedstate.simstate.qpos[4]
 end # module

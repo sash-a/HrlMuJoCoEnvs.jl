@@ -82,7 +82,7 @@ function LyceumMuJoCo.getobs!(obs, env::PointGatherEnv)
 
     dn = env.sim.dn
     shaped = obsspace(env)(obs)
-    @uviews shaped @inbounds begin
+    @views @inbounds begin
         shaped.agent_pos .= dn.xpos[:x, :agent], dn.xpos[:y, :agent]
         shaped.agent_vel .= dn.qvel[:agent_x], dn.qvel[:agent_y]
         shaped.sensor_readings .= vcat(_sensor_readings(env)...)
