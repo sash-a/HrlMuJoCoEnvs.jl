@@ -32,12 +32,16 @@ end
 
 function LyceumBase.tconstruct(::Type{AntFallEnv}, n::Integer; seed=nothing)
     antmodelpath = joinpath(AssetManager.dir, "easier_ant.xml")
-    filename="antfalltmp.xml"
+    filename="antfall-tmp$(rand(1:1000000)).xml"  
 
     WorldStructure.create_world(antmodelpath, structure=WorldStructure.fall_maze, wsize=8, filename=filename)
     modelpath = joinpath(AssetManager.dir, filename)
 
-    Tuple(AntFallEnv(s, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
+    envs = Tuple(AntFallEnv(s, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
+
+    rm(modelpath)
+    
+    envs
 end
 
 AntFallEnv(;seed=nothing) = first(tconstruct(AntFallEnv, 1; seed=seed))

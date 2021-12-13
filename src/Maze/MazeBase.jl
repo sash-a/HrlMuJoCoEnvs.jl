@@ -11,14 +11,14 @@ end
 
 function _movetarget!(env::AbstractMazeEnv)
     zones = [(12, 20, -4, 12), (-4, 20, 12, 20), (-4, 12, -4, 4)]  # [(xmin, xmax, ymin, ymax)...]
-    areas = map(((xmin, xmax, ymin, ymax),)->((xmax-xmin)*(ymax-ymin)), zones)
-    weighting = map(a->a/sum(areas), areas)
+    areas = map(((xmin, xmax, ymin, ymax),) -> ((xmax - xmin) * (ymax - ymin)), zones)
+    weighting = map(a -> a / sum(areas), areas)
     xmin, xmax, ymin, ymax = sample(zones, Weights(weighting))
 
     env.target = [rand(env.rng, Uniform(xmin, xmax)), rand(env.rng, Uniform(ymin, ymax))]
 
     env.start_targ_dist = env.d_old = euclidean(_torso_xy(env), env.target)
-    getsim(env).mn[:geom_pos][:, Val(:target_geom)] = [env.target..., 0]
+    getsim(env).mn[:geom_pos][:, Val(:goal)] = [env.target..., 0]
 end
 
 function LyceumMuJoCo.reset!(env::AbstractMazeEnv)

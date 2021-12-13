@@ -1,4 +1,4 @@
-mutable struct AntMazeEnv{SIM<:MJSim, S, O} <: AbstractMazeEnv
+mutable struct AntMazeEnv{SIM<:MJSim,S,O} <: AbstractMazeEnv
     sim::SIM
     statespace::S
     obsspace::O
@@ -11,36 +11,50 @@ mutable struct AntMazeEnv{SIM<:MJSim, S, O} <: AbstractMazeEnv
     rng::MersenneTwister
 
 
-    function AntMazeEnv(sim::MJSim; structure=WorldStructure.basic_maze_structure, rng=MersenneTwister())
+    function AntMazeEnv(sim::MJSim; structure = WorldStructure.basic_maze_structure, rng = MersenneTwister())
         sspace = MultiShape(
-            target=VectorShape(Float64, 2),
-            simstate=statespace(sim),
-            last_torso_x=ScalarShape(Float64)
+            target = VectorShape(Float64, 2),
+            simstate = statespace(sim),
+            last_torso_x = ScalarShape(Float64),
         )
         ospace = MultiShape(
             # targetvec=VectorShape(Float64, 2),
             # d_old=VectorShape(Float64, 1),
-            qpos=VectorShape(Float64, sim.m.nq),
-            qvel=VectorShape(Float64, sim.m.nv),
-            t=ScalarShape(Float64),
-            target=VectorShape(Float64, 2),
+            qpos = VectorShape(Float64, sim.m.nq),
+            qvel = VectorShape(Float64, sim.m.nv),
+            t = ScalarShape(Float64),
+            target = VectorShape(Float64, 2),
         )
-        env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0, 0, 0, rng)
+        env = new{typeof(sim),typeof(sspace),typeof(ospace)}(sim, sspace, ospace, 0, structure, [0, 0], 0, 0, 0, rng)
         reset!(env)
     end
 end
 
-function LyceumBase.tconstruct(::Type{AntMazeEnv}, n::Integer; structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, 
-                                antmodelpath=joinpath(AssetManager.dir, "easier_ant.xml"), seed=nothing)
-    filename="antmazetmp.xml"
+function LyceumBase.tconstruct(
+    ::Type{AntMazeEnv},
+    n::Integer;
+    structure::Matrix{<:AbstractBlock} = WorldStructure.basic_maze_structure,
+    antmodelpath = joinpath(AssetManager.dir, "easier_ant.xml"),
+    seed = nothing,
+)
+    # just the file - rand numbers for mpi parallelism to not create the same file
+    filename = "antmaze-tmp$(rand(1:1000000)).xml"  
+    newmodelpath = joinpath(AssetManager.dir, filename)  # the whole path
 
-    WorldStructure.create_world(antmodelpath, structure=structure, wsize=8, filename=filename)
-    modelpath = joinpath(AssetManager.dir, filename)
+    WorldStructure.create_world(antmodelpath, structure = structure, wsize = 8, filename = newmodelpath)
 
-    Tuple(AntMazeEnv(s, structure=structure, rng=MersenneTwister(seed)) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip=5))
+    envs = Tuple(
+        AntMazeEnv(s, structure = structure, rng = MersenneTwister(seed)) for
+        s in LyceumBase.tconstruct(MJSim, n, newmodelpath, skip = 5)
+    )
+
+    rm(newmodelpath)
+
+    envs
 end
 
-AntMazeEnv(;structure::Matrix{<:AbstractBlock}=WorldStructure.basic_maze_structure, seed=nothing) = first(tconstruct(AntMazeEnv, 1; structure=structure, seed=seed))
+AntMazeEnv(; structure::Matrix{<:AbstractBlock} = WorldStructure.basic_maze_structure, seed = nothing) =
+    first(tconstruct(AntMazeEnv, 1; structure = structure, seed = seed))
 
 function LyceumMuJoCo.getobs!(obs, env::AntMazeEnv)
     checkaxes(obsspace(env), obs)
@@ -69,5 +83,6 @@ end
 @inline LyceumMuJoCo._torso_height(shapedstate::ShapedView, ::AntMazeEnv) = shapedstate.simstate.qpos[3]
 @inline LyceumMuJoCo._torso_height(env::AntMazeEnv) = env.sim.d.qpos[3]
 
-@inline LyceumMuJoCo._torso_ang(env::AntMazeEnv) = torso_ori(env.sim.d.qpos[ori_ind:ori_ind + 3])
-@inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::AntMazeEnv) = torso_ori(shapedstate.simstate.qpos[ori_ind:ori_ind + 3])
+@inline LyceumMuJoCo._torso_ang(env::AntMazeEnv) = torso_ori(env.sim.d.qpos[ori_ind:ori_ind+3])
+@inline LyceumMuJoCo._torso_ang(shapedstate::ShapedView, ::AntMazeEnv) =
+    torso_ori(shapedstate.simstate.qpos[ori_ind:ori_ind+3])
