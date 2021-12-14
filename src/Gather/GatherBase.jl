@@ -117,8 +117,8 @@ function _move_collectibles!(env::AbstractGatherEnv)
     for i in 1:env.nbombs
         x, y = 0, 0
         while x^2 + y^2 < env.robot_object_spacing^2
-            x = rand(Uniform(-env.activity_range / 2, env.activity_range / 2)) * 2
-            y = rand(Uniform(-env.activity_range / 2, env.activity_range / 2)) * 2    
+            x = rand(env.rng, Uniform(-env.activity_range / 2, env.activity_range / 2)) * 2
+            y = rand(env.rng, Uniform(-env.activity_range / 2, env.activity_range / 2)) * 2    
         end
 
         env.bombs[Bomb((x, y))] = i

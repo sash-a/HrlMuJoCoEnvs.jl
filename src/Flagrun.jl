@@ -62,7 +62,7 @@ end
 function LyceumMuJoCo.getobs!(obs, env::Flagrun)
     checkaxes(obsspace(env), obs)
     qpos = env.sim.d.qpos
-    @views @uviews qpos obs begin
+    @views begin
         shaped = obsspace(env)(obs)
         targetvec = env.target - _torso_xy(env)
 
