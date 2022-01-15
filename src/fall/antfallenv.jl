@@ -22,7 +22,7 @@ mutable struct AntFallEnv{SIM<:MJSim, S, O} <: AbstractFallEnv
             qpos=VectorShape(Float64, sim.m.nq),
             qvel=VectorShape(Float64, sim.m.nv),
             t=ScalarShape(Float64),
-            target=VectorShape(Float64, 2)
+            target=VectorShape(Float64, 3)
         )
         env = new{typeof(sim), typeof(sspace), typeof(ospace)}(sim, sspace, ospace, 0, FALL_TARGET, 0, 0, 0, rng)
         getsim(env).mn[:geom_pos][:,Val(:goal)] = FALL_TARGET

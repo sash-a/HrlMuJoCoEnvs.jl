@@ -10,10 +10,12 @@ function LyceumMuJoCo.step!(env::AbstractMazeEnv)
 end
 
 function _movetarget!(env::AbstractMazeEnv)
-    zones = [(12, 20, -4, 12), (-4, 20, 12, 20), (-4, 12, -4, 4)]  # [(xmin, xmax, ymin, ymax)...]
-    areas = map(((xmin, xmax, ymin, ymax),) -> ((xmax - xmin) * (ymax - ymin)), zones)
-    weighting = map(a -> a / sum(areas), areas)
-    xmin, xmax, ymin, ymax = sample(zones, Weights(weighting))
+    # zones = [(12, 20, -4, 12), (-4, 20, 12, 20), (-4, 12, -4, 4)]  # [(xmin, xmax, ymin, ymax)...]
+    # areas = map(((xmin, xmax, ymin, ymax),) -> ((xmax - xmin) * (ymax - ymin)), zones)
+    # weighting = map(a -> a / sum(areas), areas)
+    # xmin, xmax, ymin, ymax = sample(zones, Weights(weighting))
+
+    xmin, xmax = ymin, ymax = -4, 20
 
     env.target = [rand(env.rng, Uniform(xmin, xmax)), rand(env.rng, Uniform(ymin, ymax))]
 
