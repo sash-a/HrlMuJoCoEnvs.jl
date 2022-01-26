@@ -36,4 +36,18 @@ end
 
 ```
 
+## Examples of the environments
+
+### Ant Gather
+![](vids/antgather.gif)
+
+### Ant Maze
+![](vids/antmaze.gif)
+
+### Ant Push
+![](vids/antpush.gif)
+
+### Ant Fall
+![](vids/antfall.gif)
+
 ps. appologies for some poor coding practise, this is research code.
